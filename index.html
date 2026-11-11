@@ -121,10 +121,18 @@
     }
 
     .toolbar {
-      display: flex; align-items: center; gap: 7px; padding: 7px 14px; min-height: 48px;
-      flex-wrap: wrap; overflow-x: auto; scrollbar-width: thin;
+      display: grid; grid-template-rows: 34px 34px; gap: 5px; padding: 6px 12px;
+      overflow: hidden;
       background: #fff; border-bottom: 1px solid var(--line); z-index: 15;
     }
+    .toolbar-row {
+      min-width: 0; display: flex; align-items: center; gap: 6px;
+      overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+    }
+    .toolbar-row::-webkit-scrollbar { height: 5px; }
+    .toolbar-row::-webkit-scrollbar-thumb { border-radius: 4px; background: #c5d0db; }
+    .toolbar-row > button, .toolbar-row > .separator, .toolbar-row > select { flex: none; }
+    .toolbar-primary .search { flex: 1 1 220px; max-width: 320px; }
     .tool-btn {
       height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 0 10px;
       border: 1px solid transparent; border-radius: 7px; background: transparent; cursor: pointer;
@@ -145,17 +153,18 @@
       padding: 1px 5px; border-radius: 4px; border: 1px solid #cad5df; color: var(--muted);
       background: #fff; font-size: 10px;
     }
-    .toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+    .toolbar .right { display: flex; align-items: center; gap: 6px; min-width: max-content; }
 
     .workspace { min-height: 0; display: flex; position: relative; }
     .workspace-nav {
       width: 176px; flex: none; padding: 13px 9px; background: #f7f9fc;
-      border-right: 1px solid var(--line); overflow-y: auto; z-index: 8;
+      border-right: 1px solid var(--line); overflow-y: auto; overflow-x: hidden; z-index: 8; position: relative;
     }
-    .workspace-nav.collapsed { width: 58px; padding-left: 7px; padding-right: 7px; }
+    .workspace-nav.collapsed { width: 58px; padding: 46px 7px 13px; }
     .workspace-nav-toggle {
-      width: 100%; height: 32px; display: flex; align-items: center; justify-content: center;
-      margin-bottom: 8px; border: 1px solid var(--line); border-radius: 8px;
+      position: absolute; top: 8px; right: 7px; z-index: 3;
+      width: 27px; height: 27px; display: flex; align-items: center; justify-content: center;
+      margin: 0; border: 1px solid var(--line); border-radius: 8px;
       background: #fff; color: #61758b; cursor: pointer;
     }
     .workspace-nav-toggle:hover { border-color: #b9d3ff; color: var(--blue-dark); background: #f4f8ff; }
@@ -165,9 +174,11 @@
     }
     .workspace-nav.collapsed button {
       width: 42px; height: 42px; justify-content: center; padding: 0; margin-left: 1px;
+      font-size: 0;
     }
     .workspace-nav.collapsed button > :not(.nav-icon) { display: none; }
-    .workspace-nav.collapsed .nav-icon { width: 28px; height: 28px; }
+    .workspace-nav.collapsed .nav-icon { width: 28px; height: 28px; font-size: 12px; }
+    .workspace-nav.collapsed .workspace-nav-toggle { width: 27px; height: 27px; font-size: 12px; }
     .nav-section-label {
       padding: 9px 10px 6px; color: #9aa8b7; font-size: 9px;
       font-weight: 750; letter-spacing: .7px; text-transform: uppercase;
@@ -457,8 +468,8 @@
       html, body { width: 100%; height: auto; overflow: visible; background: #fff; }
       body.printing-export > *:not(#printExportSheet) { display: none !important; }
       body.printing-export #printExportSheet {
-        display: flex !important; flex-direction: column; width: 100%; height: 260mm;
-        padding: 0; color: #17263a; overflow: hidden; zoom: var(--print-scale, 1);
+        display: flex !important; flex-direction: column; width: 100%; height: 281mm;
+        padding: 0; color: #17263a; overflow: hidden; box-sizing: border-box;
       }
       #printExportSheet h1 { font-size: 18px; margin: 0 0 3px; }
       #printExportSheet .print-meta { color: #617287; margin-bottom: 7px; font-size: 9px; }
@@ -493,6 +504,44 @@
       }
       #printExportSheet .print-bar.progress { background: #18a67a; opacity: .72; }
       #printExportSheet .print-bar.milestone { width: 8px !important; transform: rotate(45deg); background: #f59f45; }
+      #printExportSheet .print-combined {
+        flex: 1; min-height: 0; display: grid; grid-template-columns: 48% 52%;
+        border: 1px solid #bfcbd6; overflow: hidden;
+      }
+      #printExportSheet .print-combined-task, #printExportSheet .print-combined-chart {
+        min-width: 0; min-height: 0; display: grid; grid-template-rows: 32px minmax(0, 1fr);
+      }
+      #printExportSheet .print-combined-task { border-right: 1px solid #bfcbd6; }
+      #printExportSheet .print-combined-head {
+        display: grid; grid-template-columns: 7% 24% 12% 12% 11% 8% 9% 17%;
+        align-items: center; background: #eef3f7; border-bottom: 1px solid #bfcbd6;
+        font-size: 7px; font-weight: 700; color: #3d5166;
+      }
+      #printExportSheet .print-combined-head > span,
+      #printExportSheet .print-combined-task-row > span {
+        min-width: 0; height: 100%; display: flex; align-items: center; padding: 0 3px;
+        border-right: 1px solid #d7e0e8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+      }
+      #printExportSheet .print-combined-head > span:last-child,
+      #printExportSheet .print-combined-task-row > span:last-child { border-right: 0; }
+      #printExportSheet .print-combined-task-rows,
+      #printExportSheet .print-combined-chart-rows {
+        min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+      }
+      #printExportSheet .print-combined-task-row,
+      #printExportSheet .print-combined-chart-row {
+        flex: 1 1 0; min-height: 0; border-bottom: 1px solid #e1e7ed;
+        font-size: var(--print-font-size, 7px);
+      }
+      #printExportSheet .print-combined-task-row {
+        display: grid; grid-template-columns: 7% 24% 12% 12% 11% 8% 9% 17%;
+      }
+      #printExportSheet .print-combined-chart-row {
+        position: relative; overflow: hidden;
+        background-image: linear-gradient(to right, transparent calc(100% - 1px), #e7edf2 calc(100% - 1px));
+        background-size: var(--print-day-w, 2%) 100%;
+      }
+      #printExportSheet .print-combined-chart-row .print-bar { top: 18%; height: 64%; }
       #printExportSheet .print-task-list {
         flex: 1; min-height: 0; overflow: hidden; border: 1px solid #bfcbd6;
       }
@@ -515,7 +564,7 @@
       #printExportSheet .print-task-list td:nth-child(7), #printExportSheet .print-task-list th:nth-child(7) { width: 56px; }
     }
 
-    .gantt-pane { min-width: 0; display: grid; grid-template-rows: 140px 1fr; }
+    .gantt-pane { min-width: 0; display: grid; grid-template-rows: var(--planner-header-height, 140px) 1fr; }
     .table-pane {
       min-width: 0; border-right: 1px solid var(--line); position: relative; overflow: hidden;
       display: grid; grid-template-rows: auto minmax(0, 1fr);
@@ -651,12 +700,12 @@
       color: #fff; font-size: 9px; font-weight: 700; margin-right: 5px;
     }
 
-    .gantt-pane { grid-template-rows: 104px 1fr; overflow: hidden; }
+    .gantt-pane { grid-template-rows: var(--planner-header-height, 140px) 1fr; overflow: hidden; }
     .timeline-head { overflow: hidden; border-bottom: 1px solid var(--line); background: #f7f9fb; position: relative; }
-    .timeline-head-inner { height: 140px; width: max-content; min-width: 100%; }
-    .timeline-tier { display: flex; height: 35px; border-bottom: 1px solid #dfe6ed; overflow: hidden; }
+    .timeline-head-inner { height: 100%; width: max-content; min-width: 100%; }
+    .timeline-tier { display: flex; height: 25%; border-bottom: 1px solid #dfe6ed; overflow: hidden; }
     .timeline-segment {
-      height: 26px; display: flex; align-items: center; justify-content: center;
+      height: 100%; display: flex; align-items: center; justify-content: center;
       border-right: 1px solid var(--line); white-space: nowrap; overflow: hidden;
     }
     .timeline-segment span { overflow: hidden; text-overflow: clip; }
@@ -1110,6 +1159,7 @@
   </header>
 
   <nav class="toolbar">
+    <div class="toolbar-row toolbar-primary">
     <button class="tool-btn primary" id="addTask"><span class="icon">＋</span><span class="text">新建任务</span></button>
     <button class="tool-btn" id="addSubtask"><span class="icon">↳</span><span class="text">新建子任务</span></button>
     <button class="tool-btn" id="duplicateTask" title="复制任务"><span class="icon">▣</span></button>
@@ -1125,6 +1175,8 @@
       <input id="searchInput" placeholder="搜索任务、负责人…" aria-label="搜索">
       <kbd>/</kbd>
     </div>
+    </div>
+    <div class="toolbar-row toolbar-secondary">
     <div class="right">
       <div class="time-window-control"><span style="color:var(--muted);font-size:9px">时间窗口</span><select id="timeScaleSelect"><option value="day">日</option><option value="week" selected>周</option><option value="month">月</option><option value="year">年</option></select><input type="range" id="windowSizeRange" min="5" max="300" value="100" aria-label="时间窗口大小"></div>
       <div class="date-window-control"><span>日期窗口</span><input type="date" id="windowStartInput" aria-label="窗口开始日期"><i>—</i><input type="date" id="windowEndInput" aria-label="窗口结束日期"><button class="mini-btn" id="applyWindowBtn">应用</button><button class="mini-btn" id="projectWindowBtn">项目全期</button><button class="mini-btn" id="todayWindowBtn">今天</button></div>
@@ -1147,6 +1199,7 @@
       <button class="tool-btn" id="proCenterBtn"><span class="icon">✦</span><span class="text">专业功能</span></button>
       <button class="tool-btn" id="exportBtn"><span class="icon">⇩</span><span class="text">导出</span></button>
       <button class="tool-btn" id="inspectorBtn"><span class="icon">☷</span></button>
+    </div>
     </div>
   </nav>
 
@@ -1172,7 +1225,7 @@
       <div class="table-pane">
         <div class="task-stats-bar" id="taskStatsBar" aria-label="任务状态统计"></div>
         <div class="table-scroll" id="tableScroll" title="左右滑动查看更多任务列" aria-label="任务列表，可左右滑动">
-          <div class="table-head">
+          <div class="table-head" id="tableHead">
             <div class="head-label"><input class="project-title-input" id="projectTitleInput" aria-label="项目名称"><strong>任务列表</strong><span class="title-edit-hint">项目名称可直接编辑</span><span id="taskCount">8 个任务 · 3 个里程碑</span><button class="mini-btn column-settings-btn" id="columnSettingsBtn" title="设置列顺序与显示状态">列设置</button></div>
             <div class="table-column-head" id="tableColumnHead">
       <div class="head-cell" data-column-key="index" draggable="true" title="任务序号；依赖列使用相同序号">序号</div>
@@ -1459,10 +1512,10 @@
   <div class="modal">
     <div class="modal-head"><h2>确认并导出文件</h2><button class="close-btn modal-close">×</button></div>
     <div class="modal-body">
-      <div class="workflow-summary"><b>PDF 是默认导出格式</b>PDF 导出前可选择“任务清单”或“甘特图”，两种内容都会压缩到一页 A3 横向纸张。甘特图只绘制任务实际开始到结束的日期范围。MPP 与 PPTX 原生文件暂不支持直接写入。</div>
+      <div class="workflow-summary"><b>PDF 是默认导出格式</b>推荐选择“任务 + 甘特图全览”，任务明细与甘特图会左右对应并完整压缩到一页 A3 横向纸张。日期轴只绘制任务实际开始到结束的范围。MPP 与 PPTX 原生文件暂不支持直接写入。</div>
       <div class="format-grid">
         <label class="format-card"><input type="radio" name="exportFormat" value="csv"><b>CSV / Excel 兼容</b><p>完整任务、日期、进度、负责人、依赖和成本字段，可直接用 Excel 打开。</p></label>
-        <label class="format-card selected"><input type="radio" name="exportFormat" value="pdf" checked><b>PDF 打印版</b><p>导出前选择任务清单或甘特图，一页横向 A3 自动缩放，日期轴只显示实际任务范围。</p></label>
+        <label class="format-card selected"><input type="radio" name="exportFormat" value="pdf" checked><b>PDF 一页全览</b><p>默认将任务明细与甘特图左右对应，在一页横向 A3 中完整展示全部任务。</p></label>
         <label class="format-card"><input type="radio" name="exportFormat" value="xml"><b>Project XML</b><p>导出项目、WBS、任务、日期和依赖的 XML 数据交换文件。</p></label>
         <label class="format-card"><input type="radio" name="exportFormat" value="json"><b>JSON 完整备份</b><p>保存项目、任务、资源、基线和配置，适合备份或再次导入。</p></label>
         <label class="format-card"><input type="radio" name="exportFormat" value="svg"><b>甘特图 SVG</b><p>导出可缩放的甘特图图形，可插入 Office、网页或设计工具。</p></label>
@@ -1472,8 +1525,9 @@
       <div class="export-content-picker" id="exportPdfContentPicker">
         <b>PDF 导出内容</b>
         <div class="content-choice-grid">
-          <label class="content-choice"><input type="radio" name="exportPdfContent" value="tasks"><b>任务清单</b><p>导出 WBS、任务名称、开始/完成日期、状态、进度、工作量、负责人和前置任务序号。</p></label>
-          <label class="content-choice selected"><input type="radio" name="exportPdfContent" value="gantt" checked><b>甘特图</b><p>导出任务时间条、完成进度、里程碑和项目日期范围，适合汇报和打印。</p></label>
+          <label class="content-choice selected"><input type="radio" name="exportPdfContent" value="combined" checked><b>任务 + 甘特图全览（推荐）</b><p>任务明细与甘特图左右对应，在一页 A3 横向中完整展示全部任务和实际日期范围。</p></label>
+          <label class="content-choice"><input type="radio" name="exportPdfContent" value="tasks"><b>仅任务清单</b><p>导出 WBS、任务名称、开始/完成日期、状态、进度、工作量、负责人和前置任务序号。</p></label>
+          <label class="content-choice"><input type="radio" name="exportPdfContent" value="gantt"><b>仅甘特图</b><p>导出任务时间条、完成进度、里程碑和项目日期范围，适合汇报和打印。</p></label>
         </div>
         <p class="content-choice-note">提示：两种 PDF 内容都会自动压缩到一页；导出前可再调整“导出范围”。</p>
       </div>
@@ -2273,6 +2327,13 @@
     localStorage.setItem('flowplan_workspace_nav_collapsed_v1', collapsed ? '1' : '0');
   }
 
+  function syncPlannerHeaderHeight() {
+    const statsHeight = $('taskStatsBar')?.getBoundingClientRect().height || 0;
+    const tableHeadHeight = $('tableHead')?.getBoundingClientRect().height || 0;
+    const headerHeight = Math.max(120, Math.ceil(statsHeight + tableHeadHeight));
+    document.documentElement.style.setProperty('--planner-header-height', `${headerHeight}px`);
+  }
+
   function updateTaskStats() {
     const completed = tasks.filter(task => task.status === '已完成' || Number(task.progress) >= 100).length;
     const inProgress = tasks.filter(task => task.status === '进行中' || (Number(task.progress) > 0 && Number(task.progress) < 100)).length;
@@ -2377,6 +2438,7 @@
     }).join('');
     $('taskCount').textContent = `${tasks.length} 个任务 · ${tasks.filter(t=>t.type==='milestone').length} 个里程碑`;
     updateTaskStats();
+    syncPlannerHeaderHeight();
     applyColumnLayout();
     wireTableEvents();
     setupColumnResizers();
@@ -2745,13 +2807,88 @@ ${body}
     downloadBlob(JSON.stringify(backup,null,2), 'application/json;charset=utf-8', 'json');
     toast('JSON 完整备份已导出');
   }
-  function setPrintSheet({title, meta, content, rowHeight, printScale = 1, dayWidth}) {
+  function setPrintSheet({title, meta, content, rowHeight, printScale = 1, dayWidth, fontSize}) {
     const sheet = $('printExportSheet');
     sheet.style.setProperty('--print-scale', printScale);
     sheet.style.setProperty('--print-row-h', `${rowHeight}px`);
+    sheet.style.setProperty('--print-font-size', `${fontSize || Math.max(4, Math.min(8, rowHeight * .55))}px`);
     if (dayWidth) sheet.style.setProperty('--print-day-w', `${dayWidth}%`);
     sheet.innerHTML = `<h1>${xmlEscape(exportFileName())} · ${xmlEscape(title)}</h1><div class="print-meta">${meta}</div>${content}`;
     document.body.classList.add('printing-export');
+  }
+
+  function printDateSegments(start, end, totalDays) {
+    const segments = [];
+    const longRange = totalDays > 1100;
+    const mediumRange = totalDays > 220;
+    let cursor = new Date(start);
+    while (cursor <= end) {
+      let segmentEnd, label;
+      if (longRange) {
+        segmentEnd = new Date(cursor.getFullYear() + 1, 0, 1);
+        label = String(cursor.getFullYear());
+      } else if (mediumRange) {
+        segmentEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        label = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2,'0')}`;
+      } else if (totalDays > 45) {
+        segmentEnd = addDays(cursor, 7);
+        label = `${String(cursor.getMonth() + 1).padStart(2,'0')}/${String(cursor.getDate()).padStart(2,'0')}`;
+      } else {
+        segmentEnd = addDays(cursor, 1);
+        label = `${String(cursor.getMonth() + 1).padStart(2,'0')}/${String(cursor.getDate()).padStart(2,'0')}`;
+      }
+      if (segmentEnd > end) segmentEnd = addDays(end, 1);
+      const days = Math.max(1, diffDays(fmtDate(segmentEnd), fmtDate(cursor)));
+      segments.push(`<div class="print-date-segment" style="width:${(days / totalDays) * 100}%">${label}</div>`);
+      cursor = segmentEnd;
+    }
+    return segments.join('');
+  }
+
+  function preparePdfCombined() {
+    const list = exportTasks();
+    const dates = list.flatMap(task => [parseDate(task.start), parseDate(task.end)]);
+    const start = dates.length ? new Date(Math.min(...dates)) : new Date(today);
+    const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 30);
+    const totalDays = Math.max(1, diffDays(fmtDate(end), fmtDate(start)) + 1);
+    const fontSize = Math.max(3.2, Math.min(8, 780 / Math.max(1, list.length)));
+    const taskRows = list.map(task => `<div class="print-combined-task-row">
+      <span>${xmlEscape(wbsCode(task))}</span>
+      <span><b>${xmlEscape(task.name)}</b></span>
+      <span>${xmlEscape(exportDateText(task.start))}</span>
+      <span>${xmlEscape(exportDateText(task.end))}</span>
+      <span>${xmlEscape(task.status || statusFromProgress(task.progress))}</span>
+      <span>${Number(task.progress) || 0}%</span>
+      <span>${Number(task.estimatedWorkloadDays) || 0}d</span>
+      <span>${xmlEscape(task.owner || '未指定')}</span>
+    </div>`).join('');
+    const chartRows = list.map(task => {
+      const left = (diffDays(task.start, fmtDate(start)) / totalDays) * 100;
+      const width = (duration(task) / totalDays) * 100;
+      const progressWidth = width * (Number(task.progress) || 0) / 100;
+      const milestone = task.type === 'milestone';
+      return `<div class="print-combined-chart-row">
+        <div class="print-bar ${milestone ? 'milestone' : ''}" style="left:${left}%;width:${milestone ? 0 : width}%"></div>
+        ${!milestone ? `<div class="print-bar progress" style="left:${left}%;width:${progressWidth}%"></div>` : ''}
+      </div>`;
+    }).join('');
+    setPrintSheet({
+      title: '任务 + 甘特图全览',
+      meta: `一页完整导出　导出范围：${$('exportScope')?.value || '完整项目'}　日期范围：${fmtDate(start)} — ${fmtDate(end)}　任务数：${list.length}　导出时间：${new Date().toLocaleString('zh-CN')}`,
+      rowHeight: 20,
+      fontSize,
+      dayWidth: 100 / totalDays,
+      content: `<div class="print-combined">
+        <div class="print-combined-task">
+          <div class="print-combined-head"><span>WBS</span><span>任务名称</span><span>开始</span><span>完成</span><span>状态</span><span>进度</span><span>工作量</span><span>负责人</span></div>
+          <div class="print-combined-task-rows">${taskRows}</div>
+        </div>
+        <div class="print-combined-chart">
+          <div class="print-date-head">${printDateSegments(start, end, totalDays)}</div>
+          <div class="print-combined-chart-rows">${chartRows}</div>
+        </div>
+      </div>`
+    });
   }
 
   function preparePdfTaskList() {
@@ -2759,8 +2896,8 @@ ${body}
     const dates = list.flatMap(task => [parseDate(task.start), parseDate(task.end)]);
     const start = dates.length ? new Date(Math.min(...dates)) : new Date(today);
     const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 30);
-    const rowHeight = Math.max(7, Math.min(34, Math.floor(780 / Math.max(1, list.length))));
-    const printScale = Math.min(1, 820 / Math.max(1, list.length * rowHeight + 42));
+    const rowHeight = Math.max(3, Math.min(34, Math.floor(780 / Math.max(1, list.length))));
+    const printScale = 1;
     const rows = list.map(task => `<tr>
       <td>${xmlEscape(wbsCode(task))}</td>
       <td>${xmlEscape(task.name)}</td>
@@ -2790,17 +2927,9 @@ ${body}
     const start = dates.length ? new Date(Math.min(...dates)) : new Date(today);
     const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 30);
     const totalDays = Math.max(1, diffDays(fmtDate(end), fmtDate(start)) + 1);
-    const rowHeight = Math.max(7, Math.min(46, Math.floor(850 / Math.max(1, list.length))));
-    const printScale = Math.min(1, 980 / Math.max(1, list.length * rowHeight + 80));
-    const dateSegments = [];
-    let cursor = new Date(start);
-    while (cursor <= end) {
-      const next = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-      const segmentEnd = next > end ? addDays(end, 1) : next;
-      const days = diffDays(fmtDate(segmentEnd), fmtDate(cursor));
-      dateSegments.push(`<div class="print-date-segment" style="width:${(days / totalDays) * 100}%">${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}</div>`);
-      cursor = segmentEnd;
-    }
+    const rowHeight = Math.max(3, Math.min(46, Math.floor(780 / Math.max(1, list.length))));
+    const printScale = 1;
+    const dateSegments = [printDateSegments(start, end, totalDays)];
     const taskLabels = [], chartRows = [];
     list.forEach(task => {
       const left = (diffDays(task.start, fmtDate(start)) / totalDays) * 100;
@@ -2823,8 +2952,9 @@ ${body}
     });
   }
 
-  function preparePdfExport(content = 'gantt') {
-    if (content === 'tasks') preparePdfTaskList();
+  function preparePdfExport(content = 'combined') {
+    if (content === 'combined') preparePdfCombined();
+    else if (content === 'tasks') preparePdfTaskList();
     else preparePdfGantt();
   }
   function exportGanttSvg() {
@@ -2861,7 +2991,7 @@ ${body}
     $('exportModal').classList.remove('open');
     if (format === 'csv') exportCsv();
     else if (format === 'pdf') {
-      const content = document.querySelector('input[name="exportPdfContent"]:checked')?.value || 'gantt';
+      const content = document.querySelector('input[name="exportPdfContent"]:checked')?.value || 'combined';
       preparePdfExport(content);
       toast('已打开打印面板，请选择“另存为 PDF”');
       setTimeout(() => window.print(), 120);
@@ -2872,9 +3002,10 @@ ${body}
   }
   function updateExportModalLabels() {
     const format = document.querySelector('input[name="exportFormat"]:checked')?.value || 'pdf';
-    const content = document.querySelector('input[name="exportPdfContent"]:checked')?.value || 'gantt';
+    const content = document.querySelector('input[name="exportPdfContent"]:checked')?.value || 'combined';
     const labels = {csv:'CSV',pdf:'PDF',xml:'Project XML',json:'JSON',svg:'SVG'};
-    const contentLabel = format === 'pdf' ? `（${content === 'tasks' ? '任务清单' : '甘特图'}）` : '';
+    const contentLabels = {combined:'任务 + 甘特图全览',tasks:'任务清单',gantt:'甘特图'};
+    const contentLabel = format === 'pdf' ? `（${contentLabels[content] || contentLabels.combined}）` : '';
     $('confirmExport').textContent = `确认并导出 ${labels[format] || ''}${contentLabel}`;
     $('exportPdfContentPicker').classList.toggle('is-hidden', format !== 'pdf');
   }
@@ -4127,6 +4258,12 @@ ${body}
   });
   document.addEventListener('scroll', () => $('globalTooltip').classList.remove('show'), true);
   window.addEventListener('afterprint', () => document.body.classList.remove('printing-export'));
+  window.addEventListener('resize', syncPlannerHeaderHeight);
+  if ('ResizeObserver' in window) {
+    const plannerHeaderObserver = new ResizeObserver(syncPlannerHeaderHeight);
+    plannerHeaderObserver.observe($('taskStatsBar'));
+    plannerHeaderObserver.observe($('tableHead'));
+  }
   $('timeScaleSelect').addEventListener('change', event => {
     timeScale = event.target.value;
     windowScale = 1; $('windowSizeRange').value = 100;
