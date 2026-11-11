@@ -462,6 +462,16 @@
       transform: translateY(3px); transition: opacity .12s ease, transform .12s ease;
     }
     .global-tooltip.show { opacity: 1; transform: translateY(0); }
+    .parent-date-hint {
+      position: fixed; z-index: 510; width: min(320px, calc(100vw - 24px)); display: none;
+      padding: 12px 13px; border: 1px solid #b9d3ff; border-radius: 10px;
+      background: #fff; color: #42536a; box-shadow: 0 14px 36px rgba(20,45,75,.2);
+      font-size: 10px; line-height: 1.55;
+    }
+    .parent-date-hint.show { display: block; }
+    .parent-date-hint b { display: block; margin-bottom: 5px; color: var(--blue-dark); font-size: 11px; }
+    .parent-date-hint .hint-state { margin: 7px 0; padding: 6px 8px; border-radius: 6px; background: var(--soft); }
+    .parent-date-hint .hint-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
     #printExportSheet { display: none; }
     @page { size: A3 landscape; margin: 8mm; }
     @media print {
@@ -1538,6 +1548,12 @@
 </div>
 <section id="printExportSheet"></section>
 <div class="global-tooltip" id="globalTooltip"></div>
+<div class="parent-date-hint" id="parentDateHint">
+  <b>父任务日期自动计算</b>
+  <div>默认取所有子任务的最早“开始”和最晚“完成”日期。直接修改父任务日期后，将切换为“手动固定”。</div>
+  <div class="hint-state" id="parentDateHintState"></div>
+  <div class="hint-actions"><button class="mini-btn" id="resetParentDates">恢复自动计算</button></div>
+</div>
 <datalist id="ownerOptions"></datalist>
 <datalist id="portfolioOptions"><option>2026 产品增长组合</option><option>数字化转型组合</option><option>运营卓越组合</option></datalist>
 <div class="drop-hint" id="dropHint">移动至 2026年5月18日</div>
@@ -2071,10 +2087,41 @@
   };
 
   function save() {
+    recomputeSummaryDates();
     const project = projects.find(item => item.id === currentProjectId);
     if (project) project.tasks = tasks;
     localStorage.setItem('flowplan_projects_v1', JSON.stringify(projects));
     localStorage.setItem('flowplan_current_project', currentProjectId);
+  }
+
+  function hasChildTasks(task) {
+    const index = tasks.indexOf(task);
+    return index >= 0 && index + 1 < tasks.length && tasks[index + 1].level > task.level;
+  }
+
+  function derivedChildBounds(task) {
+    const index = tasks.indexOf(task);
+    if (index < 0) return null;
+    const descendants = [];
+    for (let cursor = index + 1; cursor < tasks.length && tasks[cursor].level > task.level; cursor++) {
+      descendants.push(tasks[cursor]);
+    }
+    if (!descendants.length) return null;
+    return {
+      start: descendants.reduce((value,item) => parseDate(item.start) < parseDate(value) ? item.start : value, descendants[0].start),
+      end: descendants.reduce((value,item) => parseDate(item.end) > parseDate(value) ? item.end : value, descendants[0].end)
+    };
+  }
+
+  function recomputeSummaryDates() {
+    for (let index = tasks.length - 1; index >= 0; index--) {
+      const task = tasks[index];
+      if (task.manualDates || !hasChildTasks(task)) continue;
+      const bounds = derivedChildBounds(task);
+      if (!bounds) continue;
+      task.start = bounds.start;
+      task.end = bounds.end;
+    }
   }
   function snapshot() {
     undoStack.push(JSON.stringify(tasks));
@@ -2417,14 +2464,16 @@
       const owner = ownerFor(task.owner);
       const cellFor = key => {
         const hidden = hiddenColumns.has(key) ? ' column-hidden' : '';
+        const parentDate = hasChildTasks(task);
+        const parentDateAttrs = parentDate ? ` class="parent-date-input" data-parent-date="1" data-date-mode="${task.manualDates ? 'manual' : 'auto'}" title="父任务日期默认自动取子任务跨度；点击可查看说明"` : '';
         if (key === 'index') return `<div class="cell${hidden}" data-column-key="index"><span class="index" title="任务序号 ${taskSequence(task)} · WBS ${wbsCode(task)}">${taskSequence(task)}</span></div>`;
         if (key === 'name') return `<div class="cell task-title-wrap${hidden}" data-column-key="name" style="padding-left:${7+task.level*15}px">
           <button class="twisty ${children?'':'placeholder'}" data-collapse="${task.id}">${task.collapsed?'▶':'⌄'}</button>
           <i class="type-mark"></i>
           <input class="task-name" data-field="name" value="${escapeHtml(task.name)}" title="${escapeHtml(task.name)}">
         </div>`;
-        if (key === 'start') return `<div class="cell compact-cell${hidden}" data-column-key="start"><input type="date" data-date-input data-field="start" value="${task.start}" aria-label="开始日期"></div>`;
-        if (key === 'end') return `<div class="cell compact-cell${hidden}" data-column-key="end"><input type="date" data-date-input data-field="end" value="${task.end}" aria-label="完成日期"></div>`;
+        if (key === 'start') return `<div class="cell compact-cell${hidden}" data-column-key="start"><input type="date" data-date-input data-field="start" value="${task.start}"${parentDateAttrs} aria-label="开始日期"></div>`;
+        if (key === 'end') return `<div class="cell compact-cell${hidden}" data-column-key="end"><input type="date" data-date-input data-field="end" value="${task.end}"${parentDateAttrs} aria-label="完成日期"></div>`;
         if (key === 'progress') return `<div class="cell progress-cell${hidden}" data-column-key="progress"><input data-field="progress" value="${task.progress}" type="number" min="0" max="100"><div class="progress-track"><i style="width:${task.progress}%"></i></div></div>`;
         if (key === 'status') return `<div class="cell compact-cell${hidden}" data-column-key="status"><select class="status-select" data-status="${task.status}" data-field="status">${['未开始','进行中','已完成','已阻塞','已取消'].map(status=>`<option ${status===task.status?'selected':''}>${status}</option>`).join('')}</select></div>`;
         if (key === 'workload') return `<div class="cell workload-cell${hidden}" data-column-key="workload"><input data-field="estimatedWorkloadDays" value="${Number(task.estimatedWorkloadDays) || 0}" type="number" min="0" step="0.5" aria-label="预计工作量（天）"></div>`;
@@ -2514,6 +2563,30 @@
     </defs>${paths.join('')}`;
   }
 
+  let parentDateHintTimer;
+  function showParentDateHint(input) {
+    const row = input.closest('.task-row');
+    const task = row ? taskById(row.dataset.id) : null;
+    if (!task) return;
+    const bounds = derivedChildBounds(task) || {start:task.start,end:task.end};
+    $('parentDateHint').dataset.taskId = task.id;
+    $('parentDateHintState').textContent = `当前模式：${task.manualDates ? '手动固定' : '自动计算'}　自动范围：${bounds.start} — ${bounds.end}`;
+    const hint = $('parentDateHint');
+    hint.classList.add('show');
+    requestAnimationFrame(() => {
+      const rect = input.getBoundingClientRect();
+      const hintRect = hint.getBoundingClientRect();
+      const left = Math.max(8, Math.min(window.innerWidth - hintRect.width - 8, rect.left));
+      const top = rect.bottom + hintRect.height + 12 > window.innerHeight ? Math.max(8, rect.top - hintRect.height - 10) : rect.bottom + 8;
+      hint.style.left = `${left}px`;
+      hint.style.top = `${top}px`;
+    });
+  }
+  function scheduleParentDateHintHide() {
+    clearTimeout(parentDateHintTimer);
+    parentDateHintTimer = setTimeout(() => $('parentDateHint').classList.remove('show'), 160);
+  }
+
   function wireTableEvents() {
     document.querySelectorAll('.task-row').forEach(row => {
       row.addEventListener('click', e => {
@@ -2549,7 +2622,10 @@
         snapshot();
         const task = taskById(input.closest('.task-row').dataset.id);
         const field = input.dataset.field;
-        if (field === 'start' || field === 'end') task[field] = normalizeDateInput(input.value, task[field]);
+        if (field === 'start' || field === 'end') {
+          task[field] = normalizeDateInput(input.value, task[field]);
+          if (hasChildTasks(task)) task.manualDates = true;
+        }
         else if (field === 'progress') {
           task.progress = Math.max(0, Math.min(100, Number(input.value) || 0));
           if (!['已阻塞','已取消'].includes(task.status)) task.status = statusFromProgress(task.progress);
@@ -2579,6 +2655,12 @@
           openPicker();
         }
       });
+      if (input.dataset.parentDate) {
+        input.addEventListener('mouseenter', () => showParentDateHint(input));
+        input.addEventListener('focus', () => showParentDateHint(input));
+        input.addEventListener('mouseleave', scheduleParentDateHintHide);
+        input.addEventListener('blur', scheduleParentDateHintHide);
+      }
     });
   }
 
@@ -2610,6 +2692,7 @@
     if (!dragging.snapshotDone) { snapshot(); dragging.snapshotDone = true; }
     const days = Math.round((e.clientX - dragging.x) / dayWidth);
     if (!days) return;
+    if (hasChildTasks(dragging.task)) dragging.task.manualDates = true;
     if (dragging.mode === 'move') {
       dragging.task.start = fmtDate(addDays(dragging.start, days));
       dragging.task.end = fmtDate(addDays(dragging.end, days));
@@ -2699,6 +2782,7 @@
   }
 
   function renderAll(refreshInspector = true) {
+    recomputeSummaryDates();
     const currentProject = projects.find(project => project.id === currentProjectId);
     if (currentProject && document.activeElement !== $('projectTitleInput')) $('projectTitleInput').value = currentProject.name;
     updateProjectWorkflowTrigger();
@@ -4341,7 +4425,10 @@ ${body}
   ['detailName','detailStart','detailEnd','detailType','detailOwner','detailScheduleMode','detailDurationType','detailConstraint','detailPriority','detailStatus','detailWorkload','detailInactive','detailNotes'].forEach(id => $(id).addEventListener('change', () => {
     const task = taskById(selectedId); if (!task) return;
     snapshot();
+    const previousStart = task.start;
+    const previousEnd = task.end;
     task.name=$('detailName').value; task.start=$('detailStart').value; task.end=$('detailEnd').value;
+    if (hasChildTasks(task) && (task.start !== previousStart || task.end !== previousEnd)) task.manualDates = true;
     task.type=$('detailType').value; task.owner=$('detailOwner').value;
     task.scheduleMode=$('detailScheduleMode').value; task.durationType=$('detailDurationType').value;
     task.constraint=$('detailConstraint').value; task.priority=Number($('detailPriority').value)||50;
@@ -4364,6 +4451,16 @@ ${body}
     const task=taskById(selectedId); snapshot();
     task.deps=parseDependencyInput(e.target.value,task.id);
     save(); renderAll(); toast('前置任务已更新');
+  });
+
+  $('parentDateHint').addEventListener('mouseenter', () => clearTimeout(parentDateHintTimer));
+  $('parentDateHint').addEventListener('mouseleave', scheduleParentDateHintHide);
+  $('resetParentDates').addEventListener('click', () => {
+    const task = taskById($('parentDateHint').dataset.taskId);
+    if (!task) return;
+    task.manualDates = false;
+    save(); renderAll(); $('parentDateHint').classList.remove('show');
+    toast('父任务日期已恢复自动计算');
   });
 
   $('ganttScroll').addEventListener('scroll', e => {
