@@ -62,6 +62,18 @@
     }
     .project-switch b { font-weight: 650; }
     .project-switch small { color: #a9bbd0; display: block; margin-top: 1px; }
+    .workflow-trigger {
+      min-width: 112px; height: 38px; display: inline-flex; align-items: center; gap: 7px;
+      padding: 0 10px; border: 1px solid rgba(255,255,255,.15); border-radius: 9px;
+      background: rgba(255,255,255,.08); color: #eaf2fb; cursor: pointer; white-space: nowrap;
+    }
+    .workflow-trigger:hover { background: rgba(255,255,255,.14); }
+    .workflow-trigger .workflow-dot {
+      width: 8px; height: 8px; flex: none; border-radius: 50%; background: #62d5a5;
+      box-shadow: 0 0 0 3px rgba(98,213,165,.14);
+    }
+    .workflow-trigger small { display: block; color: #a9bbd0; font-size: 8px; line-height: 1.1; }
+    .workflow-trigger b { display: block; max-width: 78px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
     .top-spacer { flex: 1; }
     .top-action {
       width: 36px; height: 36px; border: 0; border-radius: 9px; color: #dce8f4;
@@ -140,6 +152,22 @@
       width: 176px; flex: none; padding: 13px 9px; background: #f7f9fc;
       border-right: 1px solid var(--line); overflow-y: auto; z-index: 8;
     }
+    .workspace-nav.collapsed { width: 58px; padding-left: 7px; padding-right: 7px; }
+    .workspace-nav-toggle {
+      width: 100%; height: 32px; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px; border: 1px solid var(--line); border-radius: 8px;
+      background: #fff; color: #61758b; cursor: pointer;
+    }
+    .workspace-nav-toggle:hover { border-color: #b9d3ff; color: var(--blue-dark); background: #f4f8ff; }
+    .workspace-nav.collapsed .nav-section-label {
+      height: 1px; min-height: 1px; margin: 8px 5px; padding: 0; overflow: hidden; background: var(--line);
+      color: transparent;
+    }
+    .workspace-nav.collapsed button {
+      width: 42px; height: 42px; justify-content: center; padding: 0; margin-left: 1px;
+    }
+    .workspace-nav.collapsed button > :not(.nav-icon) { display: none; }
+    .workspace-nav.collapsed .nav-icon { width: 28px; height: 28px; }
     .nav-section-label {
       padding: 9px 10px 6px; color: #9aa8b7; font-size: 9px;
       font-weight: 750; letter-spacing: .7px; text-transform: uppercase;
@@ -333,6 +361,33 @@
       background: #fff; color: #42536a; padding: 0 4px; outline: 0; font-size: 10px;
     }
     .date-window-control input[type="date"]:focus { border-color: #9dc0ff; }
+    .date-window-control input[type="date"]::-webkit-calendar-picker-indicator {
+      display: none; opacity: 0; width: 0; margin: 0; padding: 0;
+    }
+    .status-flow-track {
+      display: grid; grid-template-columns: repeat(5, minmax(72px, 1fr)); gap: 7px;
+      margin: 6px 0 18px; overflow-x: auto; padding-bottom: 5px;
+    }
+    .status-flow-node {
+      min-height: 58px; display: grid; place-items: center; padding: 7px;
+      border: 1px solid var(--line); border-radius: 9px; background: var(--soft);
+      color: var(--muted); text-align: center; font-size: 9px;
+    }
+    .status-flow-node.current {
+      border-color: var(--blue); background: #eaf2ff; color: var(--blue-dark); font-weight: 750;
+      box-shadow: 0 0 0 3px rgba(52,120,246,.1);
+    }
+    .status-flow-node.done { border-color: #b9e2d0; background: #effaf5; color: var(--green); }
+    .status-flow-history {
+      margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line);
+    }
+    .status-flow-history h4 { margin: 0 0 9px; font-size: 11px; }
+    .status-history-item {
+      display: grid; grid-template-columns: 88px 1fr auto; gap: 9px; align-items: center;
+      padding: 8px 0; border-bottom: 1px dashed #dfe5eb; font-size: 9px;
+    }
+    .status-history-item:last-child { border-bottom: 0; }
+    .status-history-item small { color: var(--muted); }
     .top-popover {
       position: fixed; top: 53px; right: 18px; width: 335px; max-height: 520px;
       background: #fff; border: 1px solid var(--line); border-radius: 12px;
@@ -437,7 +492,7 @@
         min-width: 3px; border-radius: 3px; background: #3478f6; overflow: hidden;
       }
       #printExportSheet .print-bar.progress { background: #18a67a; opacity: .72; }
-      #printExportSheet .print-bar.milestone { width: 8px !important; transform: rotate(45deg); background: #e79a43; }
+      #printExportSheet .print-bar.milestone { width: 8px !important; transform: rotate(45deg); background: #f59f45; }
       #printExportSheet .print-task-list {
         flex: 1; min-height: 0; overflow: hidden; border: 1px solid #bfcbd6;
       }
@@ -460,8 +515,11 @@
       #printExportSheet .print-task-list td:nth-child(7), #printExportSheet .print-task-list th:nth-child(7) { width: 56px; }
     }
 
-    .gantt-pane { min-width: 0; display: grid; grid-template-rows: 104px 1fr; }
-    .table-pane { min-width: 0; border-right: 1px solid var(--line); position: relative; overflow: hidden; }
+    .gantt-pane { min-width: 0; display: grid; grid-template-rows: 140px 1fr; }
+    .table-pane {
+      min-width: 0; border-right: 1px solid var(--line); position: relative; overflow: hidden;
+      display: grid; grid-template-rows: auto minmax(0, 1fr);
+    }
     .panel-splitter {
       position: relative; z-index: 12; cursor: col-resize; touch-action: none;
       background: #eef3f7; border-left: 1px solid var(--line); border-right: 1px solid var(--line);
@@ -502,9 +560,27 @@
     .project-title-input:hover { border-color: var(--line); background: #fff; }
     .project-title-input:focus { border-color: #8db2f4; background: #fff; box-shadow: 0 0 0 3px rgba(52,120,246,.12); }
     .title-edit-hint { margin-left: 5px; color: #9aa8b7; font-size: 10px; }
+    .task-stats-bar {
+      min-height: 42px; display: flex; align-items: center; gap: 7px; padding: 6px 9px;
+      overflow-x: auto; overscroll-behavior-x: contain; border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #f9fbfd, #f4f7fa); scrollbar-width: thin;
+    }
+    .task-stat {
+      min-width: 90px; flex: 1 0 auto; display: flex; align-items: center; gap: 7px;
+      padding: 5px 8px; border: 1px solid #dfe6ed; border-radius: 8px; background: #fff;
+    }
+    .task-stat i {
+      width: 24px; height: 24px; flex: none; display: grid; place-items: center;
+      border-radius: 7px; background: #eaf2ff; color: var(--blue-dark); font-style: normal; font-size: 10px; font-weight: 800;
+    }
+    .task-stat span { color: var(--muted); font-size: 8px; white-space: nowrap; }
+    .task-stat b { display: block; color: var(--navy); font-size: 12px; line-height: 1.2; white-space: nowrap; }
+    .task-stat.completion { min-width: 155px; }
+    .task-stat.completion .stat-progress { width: 55px; height: 5px; overflow: hidden; border-radius: 3px; background: #dce5ee; }
+    .task-stat.completion .stat-progress i { width: 0; height: 100%; border-radius: 3px; background: var(--blue); }
 
     .table-scroll, .gantt-scroll { min-height: 0; overflow: auto; scrollbar-color: #c4d0dc transparent; scrollbar-width: thin; }
-    .table-scroll { height: 100%; overflow-x: auto; overscroll-behavior-x: contain; background: #fff; }
+    .table-scroll { height: auto; overflow-x: auto; overscroll-behavior-x: contain; background: #fff; }
     .table-scroll::-webkit-scrollbar, .gantt-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
     .table-scroll::-webkit-scrollbar-thumb, .gantt-scroll::-webkit-scrollbar-thumb {
       border: 2px solid transparent; border-radius: 8px; background: #b9c7d4; background-clip: padding-box;
@@ -577,8 +653,8 @@
 
     .gantt-pane { grid-template-rows: 104px 1fr; overflow: hidden; }
     .timeline-head { overflow: hidden; border-bottom: 1px solid var(--line); background: #f7f9fb; position: relative; }
-    .timeline-head-inner { height: 104px; width: max-content; min-width: 100%; }
-    .timeline-tier { display: flex; height: 26px; border-bottom: 1px solid #dfe6ed; overflow: hidden; }
+    .timeline-head-inner { height: 140px; width: max-content; min-width: 100%; }
+    .timeline-tier { display: flex; height: 35px; border-bottom: 1px solid #dfe6ed; overflow: hidden; }
     .timeline-segment {
       height: 26px; display: flex; align-items: center; justify-content: center;
       border-right: 1px solid var(--line); white-space: nowrap; overflow: hidden;
@@ -648,11 +724,11 @@
     }
     .task-bar.milestone {
       width: 18px !important; height: 18px; top: 12px; transform: rotate(45deg);
-      border-radius: 3px; padding: 0; background: var(--purple);
+      border-radius: 3px; padding: 0; background: var(--orange) !important;
     }
     .task-bar.milestone span {
       transform: rotate(-45deg); transform-origin: center; position: absolute;
-      width: 70px; left: 15px; top: 8px; color: var(--purple); text-shadow: 0 1px #fff;
+      width: 70px; left: 15px; top: 8px; color: var(--orange); text-shadow: 0 1px #fff;
     }
     .rolled-up-milestone {
       position: absolute; width: 18px; height: 18px; border: 0; padding: 0;
@@ -660,15 +736,15 @@
     }
     .rolled-up-milestone:before {
       content: ""; position: absolute; inset: 2px; transform: rotate(45deg);
-      border-radius: 3px; background: var(--purple); border: 2px solid #fff;
-      box-shadow: 0 2px 7px rgba(120, 87, 215, .3);
+      border-radius: 3px; background: var(--orange); border: 2px solid #fff;
+      box-shadow: 0 2px 7px rgba(245, 159, 69, .3);
     }
     .rolled-up-milestone span {
       position: absolute; left: 21px; top: 1px; width: max-content; max-width: 145px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      color: var(--purple); font-size: 9px; font-weight: 700; text-shadow: 0 1px #fff, 0 0 3px #fff;
+      color: var(--orange); font-size: 9px; font-weight: 700; text-shadow: 0 1px #fff, 0 0 3px #fff;
     }
-    .rolled-up-milestone:hover:before { background: #6541c8; transform: rotate(45deg) scale(1.12); }
+    .rolled-up-milestone:hover:before { background: #e78625; transform: rotate(45deg) scale(1.12); }
     .task-bar.critical { box-shadow: 0 0 0 2px #ffb0b0, 0 3px 8px rgba(228,82,82,.25); }
     .task-bar .fill {
       position: absolute; inset: 0 auto 0 0; border-radius: 5px 0 0 5px;
@@ -987,6 +1063,8 @@
       .topbar { gap: 10px; padding: 0 12px; }
       .brand { min-width: 165px; }
       .project-switch { min-width: 0; max-width: 280px; }
+      .workflow-trigger { min-width: 92px; padding: 0 8px; }
+      .workflow-trigger small { display: none; }
       .project-switch > div:nth-child(2) { min-width: 0; overflow: hidden; }
       .project-switch b, .project-switch small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .main-panel { grid-template-columns: minmax(240px, var(--table-share)) 10px minmax(0, 1fr); }
@@ -997,11 +1075,13 @@
       .brand { min-width: auto; }
       .brand-name, .project-switch small { display: none; }
       .workspace-nav { width: 145px; padding-left: 6px; padding-right: 6px; }
+      .workspace-nav.collapsed { width: 58px; }
       .main-panel { grid-template-columns: minmax(0, var(--table-share)) 8px minmax(0, 1fr); overflow: hidden; }
       .panel-splitter { border-left-width: 0; border-right-width: 1px; }
       .toolbar .right { margin-left: 0; width: 100%; }
       .date-window-control { flex: 1 1 320px; }
       .date-window-control input[type="date"] { width: 105px; }
+      .task-stat { min-width: 82px; }
     }
   </style>
 </head>
@@ -1017,6 +1097,11 @@
       <div><b>星河产品 2.0 上线</b><small>产品研发部 · 2026 Q2</small></div>
       <div class="icon">⌄</div>
     </div>
+    <button class="workflow-trigger" id="projectWorkflowBtn" title="查看并执行项目状态流转">
+      <span class="workflow-dot" aria-hidden="true"></span>
+      <span><small>项目状态</small><b id="projectWorkflowStatus">进行中</b></span>
+      <span aria-hidden="true">›</span>
+    </button>
     <div class="top-spacer"></div>
     <button class="top-action notification" id="notificationBtn" title="通知"><span aria-hidden="true">♢</span><span class="notification-badge" id="notificationBadge" aria-label="3 条未读通知">3</span></button>
     <button class="top-action" id="helpBtn" title="帮助">?</button>
@@ -1066,6 +1151,7 @@
 
   <main class="workspace">
     <nav class="workspace-nav" id="workspaceNav">
+      <button class="workspace-nav-toggle" id="workspaceNavToggle" title="折叠左侧导航，扩大甘特图工作区" aria-label="折叠左侧导航">⇤</button>
       <div class="nav-section-label">项目工作区</div>
       <button class="active" data-page="plan"><span class="nav-icon">▤</span> 甘特图计划</button>
       <button data-page="projects"><span class="nav-icon">▧</span> 项目管理</button>
@@ -1083,6 +1169,7 @@
     </nav>
     <section class="main-panel">
       <div class="table-pane">
+        <div class="task-stats-bar" id="taskStatsBar" aria-label="任务状态统计"></div>
         <div class="table-scroll" id="tableScroll" title="左右滑动查看更多任务列" aria-label="任务列表，可左右滑动">
           <div class="table-head">
             <div class="head-label"><input class="project-title-input" id="projectTitleInput" aria-label="项目名称"><strong>任务列表</strong><span class="title-edit-hint">项目名称可直接编辑</span><span id="taskCount">8 个任务 · 3 个里程碑</span><button class="mini-btn column-settings-btn" id="columnSettingsBtn" title="设置列顺序与显示状态">列设置</button></div>
@@ -1246,6 +1333,33 @@
       <div class="form-group"><label>项目预算</label><input class="form-control" id="newProjectBudget" value="¥ 800,000"></div>
     </div>
     <div class="modal-foot"><button class="tool-btn modal-close">取消</button><button class="tool-btn primary" id="createProjectConfirm">创建并打开</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="projectWorkflowModal">
+  <div class="modal">
+    <div class="modal-head"><h2>项目状态流转</h2><button class="close-btn modal-close">×</button></div>
+    <div class="modal-body">
+      <div class="workflow-summary">
+        <b>状态流转会真实修改当前项目状态</b>
+        先确认当前状态，再选择允许进入的下一状态。流转日期、负责人和说明会保存到项目记录中，方便后续追溯。
+      </div>
+      <div class="status-flow-track" id="statusFlowTrack"></div>
+      <div class="form-row">
+        <div class="form-group"><label>当前状态</label><input class="form-control" id="workflowCurrentStatus" readonly></div>
+        <div class="form-group"><label>流转到</label><select class="form-control" id="workflowTargetStatus"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>流转日期</label><input type="date" class="form-control" id="workflowEffectiveDate"></div>
+        <div class="form-group"><label>执行人</label><select class="form-control" id="workflowOwner"></select></div>
+      </div>
+      <div class="form-group"><label>流转说明</label><textarea class="form-control note" id="workflowReason" placeholder="例如：阶段评审通过，项目进入执行阶段"></textarea></div>
+      <div class="status-flow-history">
+        <h4>最近流转记录</h4>
+        <div id="statusFlowHistory"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="tool-btn modal-close">取消</button><button class="tool-btn primary" id="confirmProjectWorkflow">确认流转</button></div>
   </div>
 </div>
 
@@ -1738,6 +1852,17 @@
   let showMilestoneNames = milestoneDisplaySettings.showMilestoneNames ?? true;
   let undoStack = [], redoStack = [], dragging = null;
   let filters = { type:'all', owner:'all', progress:'all', query:'' };
+  const projectWorkflowStages = ['规划中','待审批','已立项','进行中','受控中'];
+  const projectWorkflowTransitions = {
+    '规划中':['待审批','已取消'],
+    '待审批':['规划中','已立项','已取消'],
+    '已立项':['进行中','已暂停','已取消'],
+    '进行中':['受控中','已暂停','已完成','已取消'],
+    '受控中':['进行中','已暂停','已完成','已取消'],
+    '已暂停':['进行中','已取消'],
+    '已完成':[],
+    '已取消':[]
+  };
 
   const $ = id => document.getElementById(id);
   const parseDate = value => new Date(value + 'T00:00:00');
@@ -2119,6 +2244,91 @@
     $('columnSettingsModal').classList.add('open');
   }
 
+  function applyWorkspaceNavState(collapsed) {
+    $('workspaceNav').classList.toggle('collapsed', collapsed);
+    $('workspaceNavToggle').textContent = collapsed ? '⇥' : '⇤';
+    const label = collapsed ? '展开左侧导航' : '折叠左侧导航，扩大甘特图工作区';
+    $('workspaceNavToggle').setAttribute('aria-label', label);
+    $('workspaceNavToggle').dataset.tooltipText = label;
+    $('workspaceNavToggle').removeAttribute('title');
+    localStorage.setItem('flowplan_workspace_nav_collapsed_v1', collapsed ? '1' : '0');
+  }
+
+  function updateTaskStats() {
+    const completed = tasks.filter(task => task.status === '已完成' || Number(task.progress) >= 100).length;
+    const inProgress = tasks.filter(task => task.status === '进行中' || (Number(task.progress) > 0 && Number(task.progress) < 100)).length;
+    const dependencyCount = tasks.reduce((sum, task) => sum + (Array.isArray(task.deps) ? task.deps.length : 0), 0);
+    const workloadTasks = tasks.filter(task => task.type !== 'summary');
+    const weightTotal = workloadTasks.reduce((sum, task) => sum + Math.max(.25, Number(task.estimatedWorkloadDays) || 1), 0);
+    const completion = weightTotal ? Math.round(workloadTasks.reduce((sum, task) => {
+      const weight = Math.max(.25, Number(task.estimatedWorkloadDays) || 1);
+      return sum + Math.max(0, Math.min(100, Number(task.progress) || 0)) * weight;
+    }, 0) / weightTotal) : 0;
+    $('taskStatsBar').innerHTML = `
+      <div class="task-stat"><i>总</i><div><span>任务总数</span><b>${tasks.length} 项</b></div></div>
+      <div class="task-stat"><i>✓</i><div><span>已完成</span><b>${completed} 项</b></div></div>
+      <div class="task-stat"><i>▶</i><div><span>进行中</span><b>${inProgress} 项</b></div></div>
+      <div class="task-stat"><i>⌁</i><div><span>依赖关系</span><b>${dependencyCount} 条</b></div></div>
+      <div class="task-stat completion"><i>${completion}%</i><div><span>整体项目完成度</span><div class="stat-progress"><i style="width:${completion}%"></i></div></div></div>`;
+  }
+
+  function updateProjectWorkflowTrigger() {
+    const project = projects.find(item => item.id === currentProjectId);
+    if (!project) return;
+    const status = project.status || '规划中';
+    $('projectWorkflowStatus').textContent = status;
+    $('projectWorkflowBtn').dataset.tooltipText = `项目当前为“${status}”，点击查看状态流转路径并执行下一状态`;
+  }
+
+  function renderProjectWorkflowModal() {
+    const project = projects.find(item => item.id === currentProjectId);
+    if (!project) return;
+    const current = project.status || '规划中';
+    const workflowKey = projectWorkflowTransitions[current] ? current : current === '健康' ? '进行中' : '规划中';
+    const currentIndex = projectWorkflowStages.indexOf(workflowKey);
+    $('statusFlowTrack').innerHTML = projectWorkflowStages.map((stage,index) => `
+      <div class="status-flow-node ${stage === workflowKey ? 'current' : ''} ${currentIndex >= 0 && index < currentIndex ? 'done' : ''}">
+        <span>${index + 1}<br><b>${stage}</b></span>
+      </div>`).join('');
+    $('workflowCurrentStatus').value = current;
+    $('workflowEffectiveDate').value = fmtDate(today);
+    $('workflowOwner').innerHTML = owners.map(owner => `<option ${owner.name === project.owner ? 'selected' : ''}>${escapeHtml(owner.name)}</option>`).join('');
+    const allowed = projectWorkflowTransitions[workflowKey] || projectWorkflowStages.filter(stage => stage !== workflowKey);
+    $('workflowTargetStatus').innerHTML = allowed.length
+      ? allowed.map(status => `<option>${status}</option>`).join('')
+      : '<option value="">当前状态不可继续流转</option>';
+    $('confirmProjectWorkflow').disabled = !allowed.length;
+    const history = Array.isArray(project.statusHistory) ? project.statusHistory.slice(-5).reverse() : [];
+    $('statusFlowHistory').innerHTML = history.length ? history.map(item => `
+      <div class="status-history-item">
+        <small>${escapeHtml(item.date || '')}</small>
+        <b>${escapeHtml(item.from || '')} → ${escapeHtml(item.to || '')}</b>
+        <span>${escapeHtml(item.owner || '')}</span>
+      </div>`).join('') : '<div class="empty-state" style="padding:14px">暂无流转记录，本次流转后会自动保存在这里。</div>';
+    $('projectWorkflowModal').classList.add('open');
+  }
+
+  function confirmProjectWorkflow() {
+    const project = projects.find(item => item.id === currentProjectId);
+    const target = $('workflowTargetStatus').value;
+    if (!project || !target) return toast('当前状态没有可执行的下一步', 'warn');
+    const from = project.status || '规划中';
+    project.status = target;
+    project.statusHistory = Array.isArray(project.statusHistory) ? project.statusHistory : [];
+    project.statusHistory.push({
+      from, to:target, date:$('workflowEffectiveDate').value || fmtDate(today),
+      owner:$('workflowOwner').value || project.owner || '待指派',
+      reason:$('workflowReason').value.trim(), updatedAt:new Date().toISOString()
+    });
+    save();
+    $('projectWorkflowModal').classList.remove('open');
+    $('workflowReason').value = '';
+    updateProjectWorkflowTrigger();
+    renderProjectList();
+    document.querySelector('#projectSwitch small').textContent = `${project.portfolio || '不关联'} · ${target}`;
+    toast(`项目状态已从“${from}”流转到“${target}”`);
+  }
+
   function renderTable() {
     const visible = getVisibleTasks();
     $('tableBody').innerHTML = visible.map((task, index) => {
@@ -2147,6 +2357,7 @@
         </div>`;
     }).join('');
     $('taskCount').textContent = `${tasks.length} 个任务 · ${tasks.filter(t=>t.type==='milestone').length} 个里程碑`;
+    updateTaskStats();
     applyColumnLayout();
     wireTableEvents();
     setupColumnResizers();
@@ -2409,6 +2620,7 @@
   function renderAll(refreshInspector = true) {
     const currentProject = projects.find(project => project.id === currentProjectId);
     if (currentProject && document.activeElement !== $('projectTitleInput')) $('projectTitleInput').value = currentProject.name;
+    updateProjectWorkflowTrigger();
     renderTable(); renderGantt();
     if (refreshInspector) renderInspector();
     $('criticalCount').textContent = `关键任务 ${tasks.filter(t=>t.critical).length} 个`;
@@ -2608,7 +2820,7 @@ ${body}
       const y = top+index*rowHeight, x = dateX(task.start), width = Math.max(8,(duration(task))*18-4);
       const milestone = task.type === 'milestone';
       const shape = milestone
-        ? `<polygon points="${x},${y+10} ${x+10},${y+20} ${x},${y+30} ${x-10},${y+20}" fill="#e79a43"/>`
+        ? `<polygon points="${x},${y+10} ${x+10},${y+20} ${x},${y+30} ${x-10},${y+20}" fill="#f59f45"/>`
         : `<rect x="${x}" y="${y+10}" width="${width}" height="18" rx="5" fill="${task.critical?'#d94747':'#3478f6'}"/><rect x="${x}" y="${y+10}" width="${width*(Number(task.progress)||0)/100}" height="18" rx="5" fill="#18a67a"/>`;
       return `<g><line x1="0" y1="${y+rowHeight}" x2="${svgWidth}" y2="${y+rowHeight}" stroke="#e4eaf0"/><text x="12" y="${y+23}" font-size="12" fill="#2b3b50">${xmlEscape(wbsCode(task))} ${xmlEscape(task.name)}</text>${shape}</g>`;
     }).join('');
@@ -3401,6 +3613,7 @@ ${body}
     const project = projects.find(item => item.id === id);
     document.querySelector('#projectSwitch b').textContent = project.name;
     document.querySelector('#projectSwitch small').textContent = `${project.portfolio} · ${project.status}`;
+    updateProjectWorkflowTrigger();
     $('projectMenu').classList.remove('open');
     renderProjectList(); renderAll();
     toast(`已切换到项目「${project.name}」`);
@@ -3440,6 +3653,7 @@ ${body}
     save(); $('newProjectModal').classList.remove('open'); renderProjectList(); renderAll();
     document.querySelector('#projectSwitch b').textContent = name;
     document.querySelector('#projectSwitch small').textContent = `${portfolio} · 规划中`;
+    updateProjectWorkflowTrigger();
     toast(`项目「${name}」已创建`);
   }
 
@@ -3661,6 +3875,11 @@ ${body}
     renderProjectList();
     $('projectMenu').classList.toggle('open');
   });
+  $('projectWorkflowBtn').addEventListener('click', renderProjectWorkflowModal);
+  $('confirmProjectWorkflow').addEventListener('click', confirmProjectWorkflow);
+  $('workspaceNavToggle').addEventListener('click', () => {
+    applyWorkspaceNavState(!$('workspaceNav').classList.contains('collapsed'));
+  });
   $('closeProjectMenu').addEventListener('click', () => $('projectMenu').classList.remove('open'));
   $('projectSearch').addEventListener('input', event => renderProjectList(event.target.value));
   $('projectList').addEventListener('click', event => {
@@ -3798,6 +4017,8 @@ ${body}
   $('profileSettings').addEventListener('click', () => openWorkflowModal('profile-settings'));
   const buttonDescriptions = {
     projectSwitch:'切换项目、新建项目或管理现有项目',
+    workspaceNavToggle:'折叠或展开左侧工作区导航',
+    projectWorkflowBtn:'查看项目状态路径，选择下一状态并记录流转',
     notificationBtn:'打开通知中心，查看审批、风险和项目提醒',
     helpBtn:'打开帮助面板与整体使用说明',
     profileBtn:'打开个人账户、偏好设置和权限入口',
@@ -3826,6 +4047,7 @@ ${body}
     confirmExport:'按已选格式和导出范围生成文件',
     saveRecord:'保存当前风险、交付物或变更记录',
     saveWorkflow:'保存配置并写入执行记录'
+    ,confirmProjectWorkflow:'确认项目状态变更并保存流转记录'
     ,applyWindowBtn:'应用自定义日期窗口'
     ,projectWindowBtn:'显示当前项目全部任务日期范围'
     ,todayWindowBtn:'定位到今天前后的时间窗口'
@@ -3906,6 +4128,10 @@ ${body}
     setDateWindow(addDays(today, -30), addDays(today, 60));
     toast('已定位到今天附近的时间窗口');
   });
+  [$('windowStartInput'), $('windowEndInput')].forEach(input => input.addEventListener('click', () => {
+    if (typeof input.showPicker !== 'function') return;
+    try { input.showPicker(); } catch (error) {}
+  }));
   setInterval(() => {
     const realtime = new Date();
     if (Math.abs(realtime.getTime() - today.getTime()) >= 30000) {
@@ -4004,10 +4230,12 @@ ${body}
   const currentProject = projects.find(project => project.id === currentProjectId);
   document.querySelector('#projectSwitch b').textContent = currentProject.name;
   document.querySelector('#projectSwitch small').textContent = `${currentProject.portfolio} · ${currentProject.status}`;
+  updateProjectWorkflowTrigger();
   setupPanelSplitter();
   setupColumnInteractions();
   applyColumnLayout();
   applyColumnWidths();
+  applyWorkspaceNavState(localStorage.getItem('flowplan_workspace_nav_collapsed_v1') === '1');
   renderBaselineDrawer();
   renderProjectList();
   updateTimeWindow();
