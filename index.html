@@ -88,6 +88,19 @@
       background: transparent; cursor: pointer; position: relative;
     }
     .top-action:hover { background: rgba(255,255,255,.1); }
+    .profile-identity {
+      min-width: 142px; height: 42px; display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px; padding: 3px 5px 3px 9px; border: 1px solid transparent; border-radius: 10px;
+      color: #fff; background: transparent; cursor: pointer;
+    }
+    .profile-identity:hover { border-color: rgba(255,255,255,.15); background: rgba(255,255,255,.08); }
+    .profile-identity .account-copy { min-width: 0; text-align: right; }
+    .profile-identity .account-copy small,
+    .profile-identity .account-copy b {
+      display: block; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .profile-identity .account-copy small { color: #a9bbd0; font-size: 8px; margin-bottom: 1px; }
+    .profile-identity .account-copy b { font-size: 10px; }
     .notification-badge {
       position: absolute; right: 2px; top: 1px; min-width: 15px; height: 15px;
       display: grid; place-items: center; border-radius: 8px; background: var(--red);
@@ -1187,7 +1200,10 @@
     <div class="top-spacer"></div>
     <button class="top-action notification" id="notificationBtn" title="通知"><span aria-hidden="true">♢</span><span class="notification-badge" id="notificationBadge" aria-label="3 条未读通知">3</span></button>
     <button class="top-action" id="helpBtn" title="帮助">?</button>
-    <div class="avatar" id="profileBtn" role="button" tabindex="0">林</div>
+    <button class="profile-identity" id="profileBtn">
+      <span class="account-copy"><small id="topAccountPermission">仅公开项目查看权限</small><b id="topAccountName">当前未登录</b></span>
+      <span class="avatar" id="profileAvatar">访</span>
+    </button>
   </header>
 
   <nav class="toolbar">
@@ -1500,11 +1516,11 @@
       <button class="mini-btn primary" id="cloudLoginBtn">登录并同步</button>
     </div>
     <div id="cloudAccountInfo" style="display:none;margin-top:12px">
-      <div class="profile-card"><div class="avatar">☁</div><div><b id="cloudAccountName">已登录</b><small id="cloudAccountEmail"></small></div><span class="permission-chip">在线</span></div>
+      <div class="profile-card"><div class="avatar" id="cloudAvatar">管</div><div><b id="cloudAccountName">已登录</b><small id="cloudAccountEmail"></small></div><span class="permission-chip">在线</span></div>
       <button class="mini-btn" id="cloudLogoutBtn">退出登录</button>
     </div>
     <p style="margin:11px 0;color:var(--muted);font-size:9px;line-height:1.6">公开访客可直接查看在线数据；使用管理员账号登录后，编辑内容会保存到云端并实时同步。用户名和密码由你在 Supabase 中设置，不写入网页源码。</p>
-    <div class="mini-table"><tbody><tr><td>当前角色</td><td>在线项目管理员</td></tr><tr><td>数据权限</td><td>登录后可编辑</td></tr><tr><td>公开访问</td><td>可查看</td></tr></tbody></div>
+    <div class="mini-table"><tbody><tr><td>当前角色</td><td id="profileRole">公开访客</td></tr><tr><td>项目权限</td><td id="profileProjectPermission">仅公开项目查看权限</td></tr><tr><td>数据权限</td><td id="profileDataPermission">未登录，不能编辑</td></tr><tr><td>公开访问</td><td id="profilePublicAccess">可查看公开项目</td></tr></tbody></div>
     <button class="mini-btn primary" id="openPermissions">权限与可见性</button> <button class="mini-btn" id="profileSettings">个人设置</button>
   </div>
 </div>
@@ -1627,6 +1643,29 @@
         setTimeout(() => item.remove(), 220);
       }, 2600);
     };
+    const updateIdentityUI = ({name, permission, avatar, role, dataPermission, publicAccess, cloudTitle, cloudStatus, syncText, loggedIn}) => {
+      const values = {
+        topAccountName:name,
+        topAccountPermission:permission,
+        profileAvatar:avatar,
+        cloudAvatar:avatar,
+        profileRole:role,
+        profileProjectPermission:permission,
+        profileDataPermission:dataPermission,
+        profilePublicAccess:publicAccess,
+        cloudAuthTitle:cloudTitle,
+        cloudAuthStatus:cloudStatus,
+        cloudSyncStatus:syncText
+      };
+      Object.entries(values).forEach(([id,value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      });
+      const profileButton = document.getElementById('profileBtn');
+      if (profileButton) profileButton.dataset.tooltipText = loggedIn
+        ? `已登录：${name}。当前权限：${permission}`
+        : `当前未登录，${permission}。点击打开登录窗口`;
+    };
     const updateUI = () => {
       const status = document.getElementById('cloudAuthStatus');
       const sync = document.getElementById('cloudSyncStatus');
@@ -1638,20 +1677,37 @@
         sync.textContent = '云端未配置';
         loginForm.style.display = 'block';
         accountInfo.style.display = 'none';
+        updateIdentityUI({
+          name:'当前未登录', permission:'仅本机查看权限', avatar:'访', role:'本机访客',
+          dataPermission:'仅保存在当前浏览器', publicAccess:'云端未启用',
+          cloudTitle:'云端数据同步未配置', cloudStatus:'当前仅保存在本机。', syncText:'云端未配置', loggedIn:false
+        });
         return;
       }
       if (sessionUser) {
+        const displayName = sessionUser.user_metadata?.name || sessionUser.email?.split('@')[0] || '在线管理员';
+        const avatarText = Array.from(displayName.trim())[0] || '管';
         status.textContent = '已连接 Supabase Realtime，编辑内容会实时保存。';
         sync.textContent = '云端实时同步';
         loginForm.style.display = 'none';
         accountInfo.style.display = 'block';
-        document.getElementById('cloudAccountName').textContent = sessionUser.user_metadata?.name || '在线管理员';
+        document.getElementById('cloudAccountName').textContent = displayName;
         document.getElementById('cloudAccountEmail').textContent = sessionUser.email || '';
+        updateIdentityUI({
+          name:displayName, permission:'可编辑项目并实时同步', avatar:avatarText, role:'在线项目管理员',
+          dataPermission:'可编辑并实时同步', publicAccess:'可查看公开项目',
+          cloudTitle:'已登录 · 云端实时同步', cloudStatus:'编辑内容会自动保存到云端。', syncText:'云端实时同步', loggedIn:true
+        });
       } else {
         status.textContent = '公开访客可查看；登录后可编辑并同步。';
         sync.textContent = '公开只读';
         loginForm.style.display = 'block';
         accountInfo.style.display = 'none';
+        updateIdentityUI({
+          name:'当前未登录', permission:'仅公开项目查看权限', avatar:'访', role:'公开访客',
+          dataPermission:'未登录，不能编辑', publicAccess:'可查看公开项目',
+          cloudTitle:'当前未登录', cloudStatus:'仅公开项目查看权限。', syncText:'公开只读', loggedIn:false
+        });
       }
     };
     const saveNow = async () => {
