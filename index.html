@@ -2830,7 +2830,7 @@
     const start = base?.end || fmtDate(today);
     tasks.splice(selectedIndex + 1, 0, {
       id, name: sub ? '新建子任务' : '新建任务', level, type:'task',
-      start, end: fmtDate(addDays(start, 4)), progress:0, owner:'陈妍',
+      start, end: fmtDate(addDays(start, 4)), progress:0, owner:'',
       collapsed:false, deps:sub && base ? [base.id] : [], notes:'', critical:false
     });
     normalizeTask(tasks[tasks.findIndex(t => t.id === id)]);
@@ -3993,7 +3993,7 @@ ${body}
       status:'规划中', visibility:$('newProjectVisibility').value || 'private', budget:Number($('newProjectBudget').value.replace(/[^\d]/g,'')) || 0,
       start, end:fmtDate(addDays(start, 89)), tasks:[{
         id:'NEW1', name, level:0, type:'summary', start, end:fmtDate(addDays(start, 89)),
-        progress:0, owner:'陈妍', collapsed:false, deps:[], notes:'新建项目主任务',
+        progress:0, owner:'', collapsed:false, deps:[], notes:'新建项目主任务',
         scheduleMode:'自动计划', durationType:'固定工期', priority:50
       }]
     });
