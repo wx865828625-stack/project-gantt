@@ -669,8 +669,11 @@
     }
     .twisty.placeholder { visibility: hidden; }
     .type-mark { width: 5px; height: 22px; border-radius: 3px; background: var(--blue); flex: none; }
-    .task-row[data-level="1"] .type-mark { background: var(--green); }
-    .task-row[data-level="2"] .type-mark { background: var(--orange); }
+    .task-row[data-level="0"] .type-mark { background: #28486c; }
+    .task-row[data-level="1"] .type-mark { background: var(--blue); }
+    .task-row[data-level="2"] .type-mark { background: var(--green); }
+    .task-row[data-level="3"] .type-mark { background: var(--purple); }
+    .task-row[data-level="4"] .type-mark { background: var(--orange); }
     .task-name {
       border: 0; background: transparent; outline: 0; padding: 5px 4px; min-width: 0;
       width: 100%; text-overflow: ellipsis; font-weight: 560; color: #2b3b50; border-radius: 4px;
@@ -2496,20 +2499,22 @@
   function renderGantt() {
     const visible = getVisibleTasks();
     const filteredIds = new Set(tasks.filter(t => !matchesFilters(t)).map(t => t.id));
+    const levelColors = ['#28486c','#3478f6','#17a673','#7857d7','#e78625'];
     const rows = visible.map(task => {
       const startX = xForDate(task.start);
       const endX = xForDate(task.end) + dayWidth;
       const width = task.type === 'milestone' ? 18 : Math.max(12, endX - startX);
       const criticalClass = showCritical && task.critical ? 'critical' : '';
       const typeClass = task.type === 'summary' ? 'summary' : task.type === 'milestone' ? 'milestone' : '';
+      const barColor = task.type === 'milestone' ? '#f59f45' : levelColors[Math.min(Math.max(0, task.level), levelColors.length - 1)];
       const label = task.type === 'milestone' ? `${showMilestoneNames ? `<span>${escapeHtml(task.name)}</span>` : ''}` : `<div class="fill" style="width:${task.progress}%"></div><div class="label">${escapeHtml(task.name)}</div>`;
       const baselineStart = xForDate(task.baselineStart || task.start);
       const baselineWidth = task.type === 'milestone' ? 18 : Math.max(12, xForDate(task.baselineEnd || task.end) + dayWidth - baselineStart);
       const rolledUpMilestones = showCollapsedMilestones ? collapsedMilestonesFor(task) : [];
       return `
-        <div class="chart-row ${filteredIds.has(task.id)?'filtered':''}" data-chart-id="${task.id}" data-day-w="${dayWidth}">
+        <div class="chart-row ${filteredIds.has(task.id)?'filtered':''}" data-chart-id="${task.id}" data-level="${task.level}" data-day-w="${dayWidth}">
           ${showBaseline ? `<div class="baseline" style="left:${baselineStart}px;width:${baselineWidth}px"></div>` : ''}
-          <div class="task-bar ${typeClass} ${criticalClass} ${task.inactive?'inactive':''}" data-id="${task.id}" title="${escapeHtml(task.name)}${task.type==='milestone'?` · 里程碑 · ${task.start}`:''}" style="left:${startX}px;width:${width}px;background:${task.type==='summary'?'#28486c':ownerFor(task.owner).color}">
+          <div class="task-bar ${typeClass} ${criticalClass} ${task.inactive?'inactive':''}" data-id="${task.id}" title="${escapeHtml(task.name)}${task.type==='milestone'?` · 里程碑 · ${task.start}`:''}" style="left:${startX}px;width:${width}px;background:${barColor}">
             ${label}
             ${task.type !== 'milestone' && task.type !== 'summary' ? '<i class="resize-handle left"></i><i class="resize-handle right"></i><i class="dep-handle" title="拖到任务建立依赖"></i>' : ''}
           </div>
