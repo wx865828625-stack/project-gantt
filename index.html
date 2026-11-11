@@ -1215,6 +1215,7 @@
       <button class="tool-btn" id="resourceBtn"><span class="icon">◉</span><span class="text">资源负荷</span></button>
       <div class="separator"></div>
       <button class="tool-btn" id="proCenterBtn"><span class="icon">✦</span><span class="text">专业功能</span></button>
+      <button class="tool-btn" id="importBackupBtn"><span class="icon">⇧</span><span class="text">导入 JSON</span></button>
       <button class="tool-btn" id="exportBtn"><span class="icon">⇩</span><span class="text">导出</span></button>
       <button class="tool-btn" id="inspectorBtn"><span class="icon">☷</span></button>
     </div>
@@ -1380,7 +1381,7 @@
     <button class="close-btn" id="closeProjectMenu">×</button>
   </div>
   <div class="project-list" id="projectList"></div>
-  <div class="project-menu-footer"><button class="tool-btn primary" id="newProjectBtn"><span class="icon">＋</span> 新建项目</button></div>
+  <div class="project-menu-footer"><button class="tool-btn primary" id="newProjectBtn"><span class="icon">＋</span> 新建项目</button><button class="tool-btn" id="projectImportBackupBtn"><span class="icon">⇧</span> 导入项目备份</button></div>
 </div>
 
 <div class="modal-backdrop" id="newProjectModal">
@@ -4061,6 +4062,11 @@ ${body}
   $('outdentTask').addEventListener('click', () => changeLevel(-1));
   $('undoBtn').addEventListener('click', () => restore(undoStack, redoStack));
   $('redoBtn').addEventListener('click', () => restore(redoStack, undoStack));
+  $('importBackupBtn').addEventListener('click', () => $('importJsonInput').click());
+  $('projectImportBackupBtn').addEventListener('click', () => {
+    $('projectMenu').classList.remove('open');
+    $('importJsonInput').click();
+  });
   $('exportBtn').addEventListener('click', () => openExportModal('pdf'));
   $('importJsonBtn').addEventListener('click', () => $('importJsonInput').click());
   $('importJsonInput').addEventListener('change', event => importJsonBackup(event.target.files?.[0]));
@@ -4375,6 +4381,8 @@ ${body}
     profileBtn:'打开个人账户、偏好设置和权限入口',
     proCenterBtn:'打开专业功能中心',
     viewCenterBtn:'打开网络图、日历、时间线等专业视图',
+    importBackupBtn:'直接选择 JSON 项目备份文件并导入当前页面',
+    projectImportBackupBtn:'从项目菜单直接选择 JSON 项目备份并导入',
     exportBtn:'选择 CSV、PDF、XML、JSON 或 SVG 格式后确认导出',
     inspectorBtn:'打开或关闭当前任务的详情检查器',
     addTask:'新增一个与当前任务同级的任务',
