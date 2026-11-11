@@ -454,6 +454,11 @@
     .content-choice p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
     .content-choice-note { margin: 8px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
     .export-content-picker.is-hidden { display: none; }
+    .export-import-row {
+      display: flex; align-items: center; gap: 9px; margin-top: 12px; padding: 10px 12px;
+      border: 1px dashed #b9c9da; border-radius: 9px; background: #fbfcfe;
+      color: var(--muted); font-size: 9px; line-height: 1.45;
+    }
     .global-tooltip {
       position: fixed; z-index: 500; max-width: 260px; padding: 7px 9px;
       border-radius: 7px; background: rgba(16,37,63,.96); color: #fff;
@@ -1545,6 +1550,7 @@
         <p class="content-choice-note">提示：两种 PDF 内容都会自动压缩到一页；导出前可再调整“导出范围”。</p>
       </div>
       <div class="form-row" style="margin-top:14px"><div class="form-group"><label>导出范围</label><select class="form-control" id="exportScope"><option>完整项目</option><option>当前筛选结果</option><option>选中任务</option></select></div><div class="form-group"><label>CSV / 打印日期格式</label><select class="form-control" id="exportDateFormat"><option>YYYY-MM-DD</option><option>YYYY/MM/DD</option><option>MM/DD</option></select></div></div>
+      <div class="export-import-row"><button class="tool-btn" id="importJsonBtn">导入 JSON 项目备份</button><input type="file" id="importJsonInput" accept="application/json,.json" hidden><span>用于把一个页面中的项目数据迁移到另一个页面，例如从在线页面迁移到本地页面。</span></div>
     </div>
     <div class="modal-foot"><button class="tool-btn modal-close">取消</button><button class="tool-btn primary" id="confirmExport">确认并导出 PDF</button></div>
   </div>
@@ -2908,11 +2914,97 @@ ${body}
     const project = projects.find(item => item.id === currentProjectId);
     const backup = {
       format:'FlowPlan Project Backup', version:1, exportedAt:new Date().toISOString(),
-      project:{...project, tasks:exportTasks()}, resources:resourceProfiles, baselines:baselineRecords,
-      settings:{timeScale,windowScale,columnWidths,showBaseline,showDependencies,showCritical}
+      project:{...project, tasks:[...project.tasks]}, resources:resourceProfiles, baselines:baselineRecords,
+      records:{risks:riskRecords,deliverables:deliverableRecords,changes:changeRecords,timesheets:timesheetRecords},
+      settings:{timeScale,windowScale,columnWidths,columnOrder,hiddenColumns:[...hiddenColumns],showBaseline,showDependencies,showCritical,showCollapsedMilestones,showMilestoneNames}
     };
     downloadBlob(JSON.stringify(backup,null,2), 'application/json;charset=utf-8', 'json');
     toast('JSON 完整备份已导出');
+  }
+  async function importJsonBackup(file) {
+    if (!file) return;
+    try {
+      const backup = JSON.parse(await file.text());
+      const importedProject = backup.project;
+      if (!importedProject || !Array.isArray(importedProject.tasks) || !importedProject.tasks.length) {
+        throw new Error('备份中没有可导入的项目任务');
+      }
+      const projectId = String(importedProject.id || `P-${Date.now()}`);
+      const project = {
+        ...importedProject,
+        id:projectId,
+        name:String(importedProject.name || '导入的项目'),
+        portfolio:String(importedProject.portfolio || '未关联项目组合'),
+        owner:String(importedProject.owner || '待分配'),
+        status:String(importedProject.status || '规划中'),
+        visibility:importedProject.visibility || 'team',
+        tasks:importedProject.tasks.map((task,index) => ({
+          ...task,
+          id:String(task.id || `T${index + 1}`),
+          name:String(task.name || `任务 ${index + 1}`),
+          level:Number.isFinite(Number(task.level)) ? Math.max(0, Math.min(2, Number(task.level))) : 0,
+          start:fmtDate(task.start || importedProject.start || fmtDate(new Date())),
+          end:fmtDate(task.end || task.start || importedProject.end || importedProject.start || fmtDate(new Date())),
+          progress:Math.max(0, Math.min(100, Number(task.progress) || 0)),
+          owner:String(task.owner || importedProject.owner || '待分配'),
+          deps:Array.isArray(task.deps) ? task.deps.map(String) : []
+        }))
+      };
+      projects = projects.filter(item => item.id !== project.id);
+      projects.push(project);
+      currentProjectId = project.id;
+      tasks = project.tasks;
+      selectedId = tasks[0].id;
+      if (Array.isArray(backup.resources)) resourceProfiles = backup.resources;
+      if (Array.isArray(backup.baselines)) baselineRecords = backup.baselines;
+      if (backup.records) {
+        if (Array.isArray(backup.records.risks)) riskRecords = backup.records.risks;
+        if (Array.isArray(backup.records.deliverables)) deliverableRecords = backup.records.deliverables;
+        if (Array.isArray(backup.records.changes)) changeRecords = backup.records.changes;
+        if (Array.isArray(backup.records.timesheets)) timesheetRecords = backup.records.timesheets;
+      }
+      const settings = backup.settings || {};
+      if (['day','week','month','year'].includes(settings.timeScale)) timeScale = settings.timeScale;
+      if (Number(settings.windowScale) > 0) windowScale = Number(settings.windowScale);
+      if (settings.columnWidths && typeof settings.columnWidths === 'object') columnWidths = {...columnWidths, ...settings.columnWidths};
+      if (Array.isArray(settings.columnOrder)) {
+        const validOrder = settings.columnOrder.filter(key => defaultColumnOrder.includes(key));
+        columnOrder = [...new Set([...validOrder, ...defaultColumnOrder])];
+      }
+      if (Array.isArray(settings.hiddenColumns)) {
+        hiddenColumns = new Set(settings.hiddenColumns.filter(key => defaultColumnOrder.includes(key) && key !== 'name'));
+      }
+      showBaseline = settings.showBaseline ?? showBaseline;
+      showDependencies = settings.showDependencies ?? showDependencies;
+      showCritical = settings.showCritical ?? showCritical;
+      showCollapsedMilestones = settings.showCollapsedMilestones ?? showCollapsedMilestones;
+      showMilestoneNames = settings.showMilestoneNames ?? showMilestoneNames;
+      localStorage.setItem('flowplan_resource_profiles_v1', JSON.stringify(resourceProfiles));
+      localStorage.setItem('flowplan_baselines_v1', JSON.stringify(baselineRecords));
+      localStorage.setItem('flowplan_risks_v1', JSON.stringify(riskRecords));
+      localStorage.setItem('flowplan_deliverables_v1', JSON.stringify(deliverableRecords));
+      localStorage.setItem('flowplan_changes_v1', JSON.stringify(changeRecords));
+      localStorage.setItem('flowplan_timesheets_v1', JSON.stringify(timesheetRecords));
+      localStorage.setItem('flowplan_task_columns_v1', JSON.stringify({order:columnOrder,hidden:[...hiddenColumns]}));
+      localStorage.setItem('flowplan_milestone_display_v1', JSON.stringify({showCollapsedMilestones,showMilestoneNames}));
+      undoStack = []; redoStack = [];
+      save();
+      refreshOwnerOptions();
+      renderProjectList();
+      const projectButton = document.querySelector('#projectSwitch b');
+      const projectMeta = document.querySelector('#projectSwitch small');
+      if (projectButton) projectButton.textContent = project.name;
+      if (projectMeta) projectMeta.textContent = `${project.portfolio} · ${project.status}`;
+      updateProjectWorkflowTrigger();
+      setProjectWindow(false);
+      renderAll();
+      $('exportModal').classList.remove('open');
+      toast(`项目「${project.name}」已导入并切换，共 ${project.tasks.length} 个任务`);
+    } catch (error) {
+      toast(`导入失败：${error.message || '文件格式不正确'}`, 'error');
+    } finally {
+      $('importJsonInput').value = '';
+    }
   }
   function setPrintSheet({title, meta, content, rowHeight, printScale = 1, dayWidth, fontSize}) {
     const sheet = $('printExportSheet');
@@ -3970,6 +4062,8 @@ ${body}
   $('undoBtn').addEventListener('click', () => restore(undoStack, redoStack));
   $('redoBtn').addEventListener('click', () => restore(redoStack, undoStack));
   $('exportBtn').addEventListener('click', () => openExportModal('pdf'));
+  $('importJsonBtn').addEventListener('click', () => $('importJsonInput').click());
+  $('importJsonInput').addEventListener('change', event => importJsonBackup(event.target.files?.[0]));
   $('exportModal').addEventListener('change', event => {
     if (event.target.name === 'exportFormat') {
       document.querySelectorAll('.format-card').forEach(card => card.classList.toggle('selected', card.contains(event.target)));
@@ -4299,6 +4393,7 @@ ${body}
     zoomIn:'放大甘特图时间窗口，查看更细日期',
     zoomOut:'缩小甘特图时间窗口，查看更多日期',
     fitGanttBtn:'一键全览甘特图，让全部任务日期范围适配当前屏幕宽度',
+    importJsonBtn:'选择此前导出的 JSON 完整备份，把项目、任务、资源、基线和配置导入当前页面',
     closeInspector:'关闭任务详情检查器',
     closeBaselineDrawer:'关闭基线管理侧栏',
     saveBaselineDrawer:'把当前计划保存为新基线',
