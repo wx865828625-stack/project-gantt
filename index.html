@@ -1018,6 +1018,7 @@
       color: #61748a; cursor: pointer;
     }
     .zoom-btn:hover { border-color: #9ab9ea; color: var(--blue-dark); }
+    .fit-all-btn { width: auto; min-width: 38px; padding: 0 6px; font-size: 9px; font-weight: 700; }
 
     .floating-panel {
       position: absolute; right: 18px; top: 64px; width: 335px; max-height: calc(100% - 82px);
@@ -1125,7 +1126,7 @@
       <kbd>/</kbd>
     </div>
     <div class="right">
-      <div class="time-window-control"><span style="color:var(--muted);font-size:9px">时间窗口</span><select id="timeScaleSelect"><option value="day">日</option><option value="week" selected>周</option><option value="month">月</option><option value="year">年</option></select><input type="range" id="windowSizeRange" min="55" max="185" value="100" aria-label="时间窗口大小"></div>
+      <div class="time-window-control"><span style="color:var(--muted);font-size:9px">时间窗口</span><select id="timeScaleSelect"><option value="day">日</option><option value="week" selected>周</option><option value="month">月</option><option value="year">年</option></select><input type="range" id="windowSizeRange" min="5" max="300" value="100" aria-label="时间窗口大小"></div>
       <div class="date-window-control"><span>日期窗口</span><input type="date" id="windowStartInput" aria-label="窗口开始日期"><i>—</i><input type="date" id="windowEndInput" aria-label="窗口结束日期"><button class="mini-btn" id="applyWindowBtn">应用</button><button class="mini-btn" id="projectWindowBtn">项目全期</button><button class="mini-btn" id="todayWindowBtn">今天</button></div>
       <select class="view-select" id="quickViewSelect" aria-label="快速切换视图">
         <option value="gantt">甘特图</option>
@@ -1297,7 +1298,7 @@
   <footer class="statusbar">
     <span class="dot"></span><span>所有更改已保存</span><span id="cloudSyncStatus">云端未配置</span><span id="criticalCount">关键任务 2 个</span><span>工期 104 天</span>
     <div class="right">
-      <span>缩放</span><button class="zoom-btn" id="zoomOut">−</button><button class="zoom-btn" id="zoomIn">＋</button>
+      <span>缩放</span><button class="zoom-btn" id="zoomOut">−</button><button class="zoom-btn" id="zoomIn">＋</button><button class="zoom-btn fit-all-btn" id="fitGanttBtn" title="一键全览甘特图，将全部任务日期范围缩放到当前屏幕">全览</button>
       <span>时区 UTC+8</span><span>v1.0</span>
     </div>
   </footer>
@@ -2124,8 +2125,26 @@
 
   function updateTimeWindow() {
     const base = {day:42,week:16,month:5,year:1.4}[timeScale];
-    dayWidth = Math.max(1.1, base * windowScale);
+    dayWidth = Math.max(.15, base * windowScale);
     renderTimeline(); renderGantt();
+  }
+
+  function fitGanttToScreen() {
+    const bounds = projectDateBounds();
+    setDateWindow(bounds.start, bounds.end, false);
+    const totalDays = Math.max(1, chartDays);
+    timeScale = totalDays > 550 ? 'year' : totalDays > 140 ? 'month' : totalDays > 45 ? 'week' : 'day';
+    $('timeScaleSelect').value = timeScale;
+    const viewportWidth = Math.max(280, $('ganttScroll').clientWidth - 22);
+    dayWidth = Math.max(.15, viewportWidth / totalDays);
+    const base = {day:42,week:16,month:5,year:1.4}[timeScale];
+    windowScale = dayWidth / base;
+    $('windowSizeRange').value = Math.max(Number($('windowSizeRange').min), Math.min(Number($('windowSizeRange').max), Math.round(windowScale * 100)));
+    renderTimeline();
+    renderGantt();
+    $('ganttScroll').scrollLeft = 0;
+    $('timelineHead').scrollLeft = 0;
+    toast('甘特图已缩放到适合屏幕的一键全览');
   }
 
   const parseDependencyInput = (value, taskId) => [...new Set(String(value || '').split(/[,，;；]/)
@@ -4041,6 +4060,7 @@ ${body}
     filterBtn:'按任务类型、负责人和进度筛选，并设置折叠里程碑及名称显示',
     zoomIn:'放大甘特图时间窗口，查看更细日期',
     zoomOut:'缩小甘特图时间窗口，查看更多日期',
+    fitGanttBtn:'一键全览甘特图，让全部任务日期范围适配当前屏幕宽度',
     closeInspector:'关闭任务详情检查器',
     closeBaselineDrawer:'关闭基线管理侧栏',
     saveBaselineDrawer:'把当前计划保存为新基线',
@@ -4162,15 +4182,16 @@ ${body}
     if (event.target === backdrop) backdrop.classList.remove('open');
   }));
   $('zoomIn').addEventListener('click', () => {
-    windowScale = Math.min(1.85, windowScale + .12);
+    windowScale = Math.min(3, windowScale + .12);
     $('windowSizeRange').value = Math.round(windowScale * 100);
     updateTimeWindow(); toast('甘特图时间窗口已放大');
   });
   $('zoomOut').addEventListener('click', () => {
-    windowScale = Math.max(.55, windowScale - .12);
+    windowScale = Math.max(.05, windowScale - .12);
     $('windowSizeRange').value = Math.round(windowScale * 100);
     updateTimeWindow(); toast('甘特图时间窗口已缩小');
   });
+  $('fitGanttBtn').addEventListener('click', fitGanttToScreen);
   document.querySelectorAll('.panel-close').forEach(btn => btn.addEventListener('click', () => btn.closest('.floating-panel').classList.remove('open')));
 
   $('applyFilter').addEventListener('click', () => {
