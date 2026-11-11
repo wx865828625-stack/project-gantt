@@ -376,7 +376,7 @@
       display: none; opacity: 0; width: 0; margin: 0; padding: 0;
     }
     .status-flow-track {
-      display: grid; grid-template-columns: repeat(5, minmax(72px, 1fr)); gap: 7px;
+      display: grid; grid-template-columns: repeat(7, minmax(72px, 1fr)); gap: 7px;
       margin: 6px 0 18px; overflow-x: auto; padding-bottom: 5px;
     }
     .status-flow-node {
@@ -389,6 +389,11 @@
       box-shadow: 0 0 0 3px rgba(52,120,246,.1);
     }
     .status-flow-node.done { border-color: #b9e2d0; background: #effaf5; color: var(--green); }
+    .status-guide {
+      margin: -5px 0 15px; padding: 10px 12px; border: 1px solid var(--line);
+      border-radius: 9px; background: #fbfcfe; color: var(--muted); font-size: 9px; line-height: 1.65;
+    }
+    .status-guide b { color: var(--navy); }
     .status-flow-history {
       margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line);
     }
@@ -1418,14 +1423,16 @@
         先确认当前状态，再选择允许进入的下一状态。流转日期、负责人和说明会保存到项目记录中，方便后续追溯。
       </div>
       <div class="status-flow-track" id="statusFlowTrack"></div>
+      <div class="status-guide"><b>状态定义：</b>规划中＝方案编制；待审批＝提交决策；已立项＝审批通过；进行中＝正式执行；已暂停＝临时停止、可恢复；已完成＝交付验收完成；已取消＝终止不再执行。为方便纠错，任何状态都可以直接流转到其他状态，所有变更都会留痕。</div>
       <div class="form-row">
         <div class="form-group"><label>当前状态</label><input class="form-control" id="workflowCurrentStatus" readonly></div>
         <div class="form-group"><label>流转到</label><select class="form-control" id="workflowTargetStatus"></select></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>流转日期</label><input type="date" class="form-control" id="workflowEffectiveDate"></div>
-        <div class="form-group"><label>执行人</label><select class="form-control" id="workflowOwner"></select></div>
+        <div class="form-group"><label>执行人</label><input class="form-control" id="workflowOwner" list="workflowOwnerOptions" placeholder="选择已有人员或直接输入"></div>
       </div>
+      <datalist id="workflowOwnerOptions"></datalist>
       <div class="form-group"><label>流转说明</label><textarea class="form-control note" id="workflowReason" placeholder="例如：阶段评审通过，项目进入执行阶段"></textarea></div>
       <div class="status-flow-history">
         <h4>最近流转记录</h4>
@@ -1933,17 +1940,7 @@
   let showMilestoneNames = milestoneDisplaySettings.showMilestoneNames ?? true;
   let undoStack = [], redoStack = [], dragging = null;
   let filters = { type:'all', owner:'all', progress:'all', query:'' };
-  const projectWorkflowStages = ['规划中','待审批','已立项','进行中','受控中'];
-  const projectWorkflowTransitions = {
-    '规划中':['待审批','已取消'],
-    '待审批':['规划中','已立项','已取消'],
-    '已立项':['进行中','已暂停','已取消'],
-    '进行中':['受控中','已暂停','已完成','已取消'],
-    '受控中':['进行中','已暂停','已完成','已取消'],
-    '已暂停':['进行中','已取消'],
-    '已完成':[],
-    '已取消':[]
-  };
+  const projectWorkflowStages = ['规划中','待审批','已立项','进行中','已暂停','已完成','已取消'];
 
   const $ = id => document.getElementById(id);
   const parseDate = value => new Date(value + 'T00:00:00');
@@ -2425,16 +2422,21 @@
     const project = projects.find(item => item.id === currentProjectId);
     if (!project) return;
     const current = project.status || '规划中';
-    const workflowKey = projectWorkflowTransitions[current] ? current : current === '健康' ? '进行中' : '规划中';
-    const currentIndex = projectWorkflowStages.indexOf(workflowKey);
+    const workflowKey = projectWorkflowStages.includes(current) ? current : current === '健康' || current === '受控中' ? '进行中' : '规划中';
     $('statusFlowTrack').innerHTML = projectWorkflowStages.map((stage,index) => `
-      <div class="status-flow-node ${stage === workflowKey ? 'current' : ''} ${currentIndex >= 0 && index < currentIndex ? 'done' : ''}">
+      <div class="status-flow-node ${stage === workflowKey ? 'current' : ''}">
         <span>${index + 1}<br><b>${stage}</b></span>
       </div>`).join('');
     $('workflowCurrentStatus').value = current;
     $('workflowEffectiveDate').value = fmtDate(today);
-    $('workflowOwner').innerHTML = owners.map(owner => `<option ${owner.name === project.owner ? 'selected' : ''}>${escapeHtml(owner.name)}</option>`).join('');
-    const allowed = projectWorkflowTransitions[workflowKey] || projectWorkflowStages.filter(stage => stage !== workflowKey);
+    const workflowPeople = [...new Set([
+      ...owners.map(owner => owner.name),
+      project.owner,
+      ...(Array.isArray(project.statusHistory) ? project.statusHistory.map(item => item.owner) : [])
+    ].filter(Boolean))];
+    $('workflowOwnerOptions').innerHTML = workflowPeople.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
+    $('workflowOwner').value = project.owner || '';
+    const allowed = projectWorkflowStages.filter(stage => stage !== current);
     $('workflowTargetStatus').innerHTML = allowed.length
       ? allowed.map(status => `<option>${status}</option>`).join('')
       : '<option value="">当前状态不可继续流转</option>';
