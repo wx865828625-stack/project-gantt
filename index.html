@@ -2614,11 +2614,16 @@
         const draggedId = e.dataTransfer.getData('text/plain');
         if (!draggedId || draggedId === row.dataset.id) return;
         snapshot();
-        const from = tasks.findIndex(t => t.id === draggedId);
-        const to = tasks.findIndex(t => t.id === row.dataset.id);
-        const [moved] = tasks.splice(from, 1);
-        tasks.splice(to, 0, moved);
-        save(); renderAll(); toast('任务顺序已更新');
+        const draggedTask = taskById(draggedId);
+        const block = [draggedTask, ...descendantTasks(draggedTask)].filter(Boolean);
+        const blockIds = new Set(block.map(item => item.id));
+        if (blockIds.has(row.dataset.id)) return;
+        const remaining = tasks.filter(item => !blockIds.has(item.id));
+        const targetIndex = Math.max(0, remaining.findIndex(item => item.id === row.dataset.id));
+        remaining.splice(targetIndex, 0, ...block);
+        tasks.splice(0, tasks.length, ...remaining);
+        save(); renderAll();
+        toast(block.length > 1 ? `父任务及其 ${block.length - 1} 个子任务已一起移动` : '任务顺序已更新');
       });
     });
     document.querySelectorAll('[data-collapse]').forEach(button => button.addEventListener('click', () => {
@@ -2728,9 +2733,10 @@
   document.addEventListener('pointerup', () => {
     if (!dragging) return;
     const didMove = dragging.snapshotDone;
+    const movedCount = dragging.targets?.length || 1;
     dragging = null; $('dropHint').style.display = 'none';
     save(); renderAll();
-    if (didMove) toast('排期已更新');
+    if (didMove) toast(movedCount > 1 ? `父任务及 ${movedCount - 1} 个子任务排期已一起更新` : '排期已更新');
   });
 
   function startDependency(e, source) {
