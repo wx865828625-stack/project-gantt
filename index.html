@@ -1386,7 +1386,7 @@
     <button class="close-btn" id="closeProjectMenu">×</button>
   </div>
   <div class="project-list" id="projectList"></div>
-  <div class="project-menu-footer"><button class="tool-btn primary" id="newProjectBtn"><span class="icon">＋</span> 新建项目</button><button class="tool-btn" id="projectImportBackupBtn"><span class="icon">⇧</span> 导入项目备份</button></div>
+  <div class="project-menu-footer"><button class="tool-btn primary" id="newProjectBtn"><span class="icon">＋</span> 新建项目</button><button class="tool-btn" id="publishProjectBtn"><span class="icon">◉</span> 公开当前项目</button><button class="tool-btn" id="projectImportBackupBtn"><span class="icon">⇧</span> 导入项目备份</button></div>
 </div>
 
 <div class="modal-backdrop" id="newProjectModal">
@@ -1668,21 +1668,22 @@
       saveTimer = setTimeout(saveNow, 650);
     };
     const loadRemote = async (force = false) => {
-      if (!client) return;
+      if (!client) return false;
       const {data,error} = await client.from('project_snapshots')
         .select('payload, updated_at')
         .eq('id', projectId)
         .maybeSingle();
-      if (error || !data) return;
+      if (error || !data) return false;
       const remoteTime = data.updated_at || '';
       const localTime = localStorage.getItem('flowplan_cloud_updated_at') || '';
       const isOlder = localTime && new Date(remoteTime) <= new Date(localTime);
-      if (!force && isOlder) return;
+      if (!force && isOlder) return false;
       applyState(data.payload);
       originalSetItem.call(localStorage, 'flowplan_cloud_updated_at', remoteTime);
       lastRemoteAt = remoteTime;
       sessionStorage.setItem('flowplan_cloud_reloaded', remoteTime);
       location.reload();
+      return true;
     };
     const subscribe = () => {
       if (!client) return;
@@ -1714,8 +1715,8 @@
       if (error) return notice(`登录失败：${error.message}`, 'warn');
       sessionUser = data.user;
       updateUI();
-      await loadRemote(true);
       await saveNow();
+      await loadRemote(true);
       notice('登录成功，云端实时同步已启用');
     };
     const logout = async () => {
@@ -1742,7 +1743,8 @@
       const {data} = await client.auth.getSession();
       sessionUser = data?.session?.user || null;
       updateUI();
-      await loadRemote(false);
+      const reloading = await loadRemote(false);
+      if (!reloading && sessionUser) await saveNow();
       subscribe();
     };
     return {prepare, init, get enabled() { return configured; }, get user() { return sessionUser; }, scheduleSave};
@@ -4069,6 +4071,15 @@ ${body}
     $('projectMenu').classList.remove('open');
     $('importJsonInput').click();
   });
+  $('publishProjectBtn').addEventListener('click', () => {
+    const project = projects.find(item => item.id === currentProjectId);
+    if (!project) return;
+    project.visibility = 'public';
+    save();
+    renderProjectList();
+    $('projectMenu').classList.remove('open');
+    toast(`项目「${project.name}」已设为公开，登录状态下会立即保存到云端`);
+  });
   $('exportBtn').addEventListener('click', () => openExportModal('pdf'));
   $('importJsonBtn').addEventListener('click', () => $('importJsonInput').click());
   $('importJsonInput').addEventListener('change', event => importJsonBackup(event.target.files?.[0]));
@@ -4384,6 +4395,7 @@ ${body}
     proCenterBtn:'打开专业功能中心',
     viewCenterBtn:'打开网络图、日历、时间线等专业视图',
     importBackupBtn:'直接选择 JSON 项目备份文件并导入当前页面',
+    publishProjectBtn:'把当前项目设为公开，并立即保存到云端供其他人查看',
     projectImportBackupBtn:'从项目菜单直接选择 JSON 项目备份并导入',
     exportBtn:'选择 CSV、PDF、XML、JSON 或 SVG 格式后确认导出',
     inspectorBtn:'打开或关闭当前任务的详情检查器',
