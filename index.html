@@ -62,6 +62,14 @@
     }
     .project-switch b { font-weight: 650; }
     .project-switch small { color: #a9bbd0; display: block; margin-top: 1px; }
+    .project-visibility-chip {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 19px;
+      padding: 0 7px; border: 1px solid transparent; border-radius: 999px;
+      font-size: 8px; font-weight: 750; line-height: 1; white-space: nowrap;
+    }
+    .project-visibility-chip.public { color: #bdf5dc; background: rgba(45,181,120,.2); border-color: rgba(114,224,173,.35); }
+    .project-visibility-chip.team { color: #c9dcff; background: rgba(74,128,222,.2); border-color: rgba(126,171,244,.35); }
+    .project-visibility-chip.private { color: #ffd4bf; background: rgba(224,112,67,.2); border-color: rgba(241,157,122,.35); }
     .workflow-trigger {
       min-width: 112px; height: 38px; display: inline-flex; align-items: center; gap: 7px;
       padding: 0 10px; border: 1px solid rgba(255,255,255,.15); border-radius: 9px;
@@ -1168,6 +1176,7 @@
     <div class="project-switch" id="projectSwitch">
       <div class="icon">▤</div>
       <div><b>星河产品 2.0 上线</b><small>产品研发部 · 2026 Q2</small></div>
+      <span class="project-visibility-chip team" id="projectVisibilityBadge">团队</span>
       <div class="icon">⌄</div>
     </div>
     <button class="workflow-trigger" id="projectWorkflowBtn" title="查看并执行项目状态流转">
@@ -2420,6 +2429,21 @@
     $('projectWorkflowBtn').dataset.tooltipText = `项目当前为“${status}”，点击查看状态流转路径并执行下一状态`;
   }
 
+  function updateProjectVisibilityIndicator() {
+    const project = projects.find(item => item.id === currentProjectId);
+    const visibility = project?.visibility || 'team';
+    const badge = $('projectVisibilityBadge');
+    const labels = {private:'私密',team:'团队',public:'公开'};
+    const descriptions = {
+      private:'私密项目：仅创建人和授权成员可见',
+      team:'团队项目：项目组合成员可见',
+      public:'公开项目：其他人可以通过项目链接查看'
+    };
+    badge.textContent = labels[visibility] || labels.team;
+    badge.className = `project-visibility-chip ${visibility}`;
+    badge.dataset.tooltipText = descriptions[visibility] || descriptions.team;
+  }
+
   function renderProjectWorkflowModal() {
     const project = projects.find(item => item.id === currentProjectId);
     if (!project) return;
@@ -2819,6 +2843,7 @@
     recomputeSummaryDates();
     const currentProject = projects.find(project => project.id === currentProjectId);
     if (currentProject && document.activeElement !== $('projectTitleInput')) $('projectTitleInput').value = currentProject.name;
+    updateProjectVisibilityIndicator();
     updateProjectWorkflowTrigger();
     renderTable(); renderGantt();
     if (refreshInspector) renderInspector();
@@ -4077,6 +4102,7 @@ ${body}
     project.visibility = 'public';
     save();
     renderProjectList();
+    updateProjectVisibilityIndicator();
     $('projectMenu').classList.remove('open');
     toast(`项目「${project.name}」已设为公开，登录状态下会立即保存到云端`);
   });
@@ -4429,7 +4455,7 @@ ${body}
     ,newProjectBtn:'打开新建项目面板'
     ,createProjectConfirm:'创建项目并打开甘特图计划'
   };
-  const tooltipTargetSelector = 'button,[role="button"],.avatar,.format-card,.column-resizer,.twisty,[data-page-action],[data-action]';
+  const tooltipTargetSelector = 'button,[role="button"],.avatar,.format-card,.column-resizer,.twisty,.project-visibility-chip,[data-page-action],[data-action]';
   document.querySelectorAll(tooltipTargetSelector).forEach(element => {
     if (element.title) {
       element.dataset.tooltipText = element.title;
