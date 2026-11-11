@@ -2102,13 +2102,17 @@
     return index >= 0 && index + 1 < tasks.length && tasks[index + 1].level > task.level;
   }
 
-  function derivedChildBounds(task) {
+  function descendantTasks(task) {
     const index = tasks.indexOf(task);
-    if (index < 0) return null;
     const descendants = [];
     for (let cursor = index + 1; cursor < tasks.length && tasks[cursor].level > task.level; cursor++) {
       descendants.push(tasks[cursor]);
     }
+    return descendants;
+  }
+
+  function derivedChildBounds(task) {
+    const descendants = descendantTasks(task);
     if (!descendants.length) return null;
     return {
       start: descendants.reduce((value,item) => parseDate(item.start) < parseDate(value) ? item.start : value, descendants[0].start),
@@ -2677,7 +2681,14 @@
         const handle = e.target.closest('.resize-handle');
         const depHandle = e.target.closest('.dep-handle');
         if (depHandle) return startDependency(e, task);
-        dragging = { task, mode: handle ? (handle.classList.contains('left') ? 'resize-left' : 'resize-right') : 'move', x:e.clientX, start:task.start, end:task.end, snapshotDone:false };
+        const dragTargets = [task, ...descendantTasks(task)];
+        dragging = {
+          task,
+          targets:dragTargets,
+          originalDates:dragTargets.map(item => ({task:item,start:item.start,end:item.end})),
+          mode:handle ? (handle.classList.contains('left') ? 'resize-left' : 'resize-right') : 'move',
+          x:e.clientX, start:task.start, end:task.end, snapshotDone:false
+        };
         $('dropHint').style.display = 'block';
       });
       bar.addEventListener('click', e => {
@@ -2697,10 +2708,11 @@
     if (!dragging.snapshotDone) { snapshot(); dragging.snapshotDone = true; }
     const days = Math.round((e.clientX - dragging.x) / dayWidth);
     if (!days) return;
-    if (hasChildTasks(dragging.task)) dragging.task.manualDates = true;
     if (dragging.mode === 'move') {
-      dragging.task.start = fmtDate(addDays(dragging.start, days));
-      dragging.task.end = fmtDate(addDays(dragging.end, days));
+      dragging.originalDates.forEach(item => {
+        item.task.start = fmtDate(addDays(item.start, days));
+        item.task.end = fmtDate(addDays(item.end, days));
+      });
     } else if (dragging.mode === 'resize-left') {
       const next = addDays(dragging.start, days);
       dragging.task.start = fmtDate(next <= parseDate(dragging.end) ? next : parseDate(dragging.end));
