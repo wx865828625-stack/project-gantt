@@ -14,6 +14,16 @@ bash deploy.sh
 
 `https://<github用户名>.github.io/project-gantt/`
 
+### 自动部署助手
+
+Codex 无法直接读取 macOS 钥匙串中的 GitHub 凭证，但用户终端可以。启动一次自动部署助手后，后续更新无需再次手动部署：
+
+```bash
+bash auto-deploy.sh
+```
+
+请保持该终端窗口打开。助手启动时会先发布当前修改，以后收到部署请求会自动执行 `deploy.sh`。部署过程会记录到 `deploy.log`。
+
 ## Supabase 实时数据与登录
 
 1. 创建 Supabase 项目。
