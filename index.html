@@ -823,6 +823,12 @@
       transform: rotate(-45deg); transform-origin: center; position: absolute;
       width: 70px; left: 15px; top: 8px; color: var(--orange); text-shadow: 0 1px #fff;
     }
+    .task-bar.unscheduled {
+      width: 92px !important; height: 22px !important; top: 10px !important; transform: none !important;
+      border: 1px dashed #9badc0; border-radius: 6px; background: #f7f9fc !important;
+      color: #60758a; box-shadow: none; padding: 0 7px;
+    }
+    .unscheduled-label { margin-left: 4px; color: #8a9bad; font-size: 8px; font-weight: 650; }
     .rolled-up-milestone {
       position: absolute; width: 18px; height: 18px; border: 0; padding: 0;
       background: transparent; cursor: pointer; z-index: 3;
@@ -2011,11 +2017,14 @@
 
   const $ = id => document.getElementById(id);
   const parseDate = value => new Date(value + 'T00:00:00');
+  const isValidDateValue = value => Boolean(value) && !Number.isNaN(parseDate(value).getTime());
+  const isScheduledTask = task => isValidDateValue(task?.start) && isValidDateValue(task?.end);
   const fmtDate = value => {
     const d = typeof value === 'string' ? parseDate(value) : value;
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   };
   const shortDate = value => {
+    if (!value) return '';
     const d = typeof value === 'string' ? parseDate(value) : value;
     return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
   };
@@ -2036,9 +2045,9 @@
     d.setDate(d.getDate() + count);
     return d;
   };
-  const diffDays = (a, b) => Math.round((parseDate(a) - parseDate(b)) / DAY);
-  const duration = task => diffDays(task.end, task.start) + 1;
-  const xForDate = value => diffDays(value, fmtDate(chartStart)) * dayWidth;
+  const diffDays = (a, b) => isValidDateValue(a) && isValidDateValue(b) ? Math.round((parseDate(a) - parseDate(b)) / DAY) : 0;
+  const duration = task => isScheduledTask(task) ? diffDays(task.end, task.start) + 1 : 0;
+  const xForDate = value => isValidDateValue(value) ? diffDays(value, fmtDate(chartStart)) * dayWidth : 0;
   const xForDateTime = value => {
     const date = typeof value === 'string' ? parseDate(value) : value;
     return xForDate(fmtDate(date)) + ((date.getHours() * 60 + date.getMinutes()) / 1440) * dayWidth;
@@ -2120,7 +2129,7 @@
     };
   };
   const projectDateBounds = () => {
-    const dates = tasks.flatMap(task => [parseDate(task.start), parseDate(task.end)]);
+    const dates = tasks.flatMap(task => [task.start, task.end]).filter(isValidDateValue).map(parseDate);
     const start = dates.length ? new Date(Math.min(...dates)) : addDays(today, -30);
     const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 60);
     return {start:fmtDate(start), end:fmtDate(end)};
@@ -2183,7 +2192,7 @@
   }
 
   function derivedChildBounds(task) {
-    const descendants = descendantTasks(task);
+    const descendants = descendantTasks(task).filter(isScheduledTask);
     if (!descendants.length) return null;
     return {
       start: descendants.reduce((value,item) => parseDate(item.start) < parseDate(value) ? item.start : value, descendants[0].start),
@@ -2596,22 +2605,24 @@
     const filteredIds = new Set(tasks.filter(t => !matchesFilters(t)).map(t => t.id));
     const levelColors = ['#28486c','#3478f6','#17a673','#7857d7','#e78625'];
     const rows = visible.map(task => {
-      const startX = xForDate(task.start);
-      const endX = xForDate(task.end) + dayWidth;
-      const width = task.type === 'milestone' ? 18 : Math.max(12, endX - startX);
+      const scheduled = isScheduledTask(task);
+      const startX = scheduled ? xForDate(task.start) : 0;
+      const endX = scheduled ? xForDate(task.end) + dayWidth : startX;
+      const width = !scheduled ? 92 : task.type === 'milestone' ? 18 : Math.max(12, endX - startX);
       const criticalClass = showCritical && task.critical ? 'critical' : '';
-      const typeClass = task.type === 'summary' ? 'summary' : task.type === 'milestone' ? 'milestone' : '';
+      const typeClass = `${task.type === 'summary' ? 'summary' : task.type === 'milestone' ? 'milestone' : ''}${scheduled ? '' : ' unscheduled'}`;
       const barColor = task.type === 'milestone' ? '#f59f45' : levelColors[Math.min(Math.max(0, task.level), levelColors.length - 1)];
-      const label = task.type === 'milestone' ? `${showMilestoneNames ? `<span>${escapeHtml(task.name)}</span>` : ''}` : `<div class="fill" style="width:${task.progress}%"></div><div class="label">${escapeHtml(task.name)}</div>`;
-      const baselineStart = xForDate(task.baselineStart || task.start);
-      const baselineWidth = task.type === 'milestone' ? 18 : Math.max(12, xForDate(task.baselineEnd || task.end) + dayWidth - baselineStart);
+      const unscheduledLabel = scheduled ? '' : '<small class="unscheduled-label">未设置时间</small>';
+      const label = task.type === 'milestone' ? `${showMilestoneNames ? `<span>${escapeHtml(task.name)}</span>` : ''}${unscheduledLabel}` : `<div class="fill" style="width:${scheduled ? task.progress : 0}%"></div><div class="label">${escapeHtml(task.name)}${unscheduledLabel}</div>`;
+      const baselineStart = scheduled ? xForDate(task.baselineStart || task.start) : 0;
+      const baselineWidth = !scheduled ? 0 : task.type === 'milestone' ? 18 : Math.max(12, xForDate(task.baselineEnd || task.end) + dayWidth - baselineStart);
       const rolledUpMilestones = showCollapsedMilestones ? collapsedMilestonesFor(task) : [];
       return `
         <div class="chart-row ${filteredIds.has(task.id)?'filtered':''}" data-chart-id="${task.id}" data-level="${task.level}" data-day-w="${dayWidth}">
           ${showBaseline ? `<div class="baseline" style="left:${baselineStart}px;width:${baselineWidth}px"></div>` : ''}
-          <div class="task-bar ${typeClass} ${criticalClass} ${task.inactive?'inactive':''}" data-id="${task.id}" title="${escapeHtml(task.name)}${task.type==='milestone'?` · 里程碑 · ${task.start}`:''}" style="left:${startX}px;width:${width}px;background:${barColor}">
+          <div class="task-bar ${typeClass} ${criticalClass} ${task.inactive?'inactive':''}" data-id="${task.id}" title="${escapeHtml(task.name)}${scheduled ? task.type==='milestone'?` · 里程碑 · ${task.start}`:'' : ' · 未设置开始和完成日期'}" style="left:${startX}px;width:${width}px;background:${barColor}">
             ${label}
-            ${task.type !== 'milestone' && task.type !== 'summary' ? '<i class="resize-handle left"></i><i class="resize-handle right"></i><i class="dep-handle" title="拖到任务建立依赖"></i>' : ''}
+            ${scheduled && task.type !== 'milestone' && task.type !== 'summary' ? '<i class="resize-handle left"></i><i class="resize-handle right"></i><i class="dep-handle" title="拖到任务建立依赖"></i>' : ''}
           </div>
           ${rolledUpMilestones.map((milestone,index) => `<button class="rolled-up-milestone" data-rollup-id="${milestone.id}" style="left:${xForDate(milestone.start)}px;top:${index%2===0?4:22}px" title="折叠汇总里程碑：${escapeHtml(milestone.name)} · ${milestone.start}${showMilestoneNames?'':'（名称可在筛选面板开启）'}">${showMilestoneNames?`<span>${escapeHtml(milestone.name)}</span>`:''}</button>`).join('')}
         </div>`;
@@ -2643,7 +2654,7 @@
         if (!visibleIds.includes(sourceId) || !visibleIds.includes(target.id)) return;
         const source = taskById(sourceId);
         const sourceRow = rowMap.get(sourceId), targetRow = rowMap.get(target.id);
-        if (!source || !sourceRow || !targetRow) return;
+        if (!source || !sourceRow || !targetRow || !isScheduledTask(source) || !isScheduledTask(target)) return;
         const sy = sourceRow.offsetTop + 21;
         const tx = xForDate(target.start);
         const ty = targetRow.offsetTop + 21;
@@ -2744,7 +2755,7 @@
         } else if (field === 'deps') {
           task.deps = parseDependencyInput(input.value, task.id);
         } else task[field] = input.value;
-        if (parseDate(task.end) < parseDate(task.start)) task.end = task.start;
+        if (isScheduledTask(task) && parseDate(task.end) < parseDate(task.start)) task.end = task.start;
         save(); renderAll();
       });
     });
@@ -2774,10 +2785,14 @@
       bar.addEventListener('pointerdown', e => {
         const task = taskById(bar.dataset.id);
         selectTask(task.id);
+        if (!isScheduledTask(task)) {
+          toast('该任务尚未设置开始和完成日期，请先在任务列表中选择日期', 'warn');
+          return;
+        }
         const handle = e.target.closest('.resize-handle');
         const depHandle = e.target.closest('.dep-handle');
         if (depHandle) return startDependency(e, task);
-        const dragTargets = [task, ...descendantTasks(task)];
+        const dragTargets = [task, ...descendantTasks(task)].filter(isScheduledTask);
         dragging = {
           task,
           targets:dragTargets,
@@ -2912,11 +2927,10 @@
     const base = taskById(selectedId) || tasks[0];
     const id = 'T' + (Math.max(0,...tasks.map(t=>Number(t.id.replace(/\D/g,''))||0)) + 1);
     const level = sub ? Math.min(2, (base?.level ?? 0) + 1) : (base?.level ?? 0);
-    const start = base?.end || fmtDate(today);
     tasks.splice(selectedIndex + 1, 0, {
       id, name: sub ? '新建子任务' : '新建任务', level, type:'task',
-      start, end: fmtDate(addDays(start, 4)), progress:0, owner:'',
-      collapsed:false, deps:sub && base ? [base.id] : [], notes:'', critical:false
+      start:'', end:'', progress:0, owner:'',
+      collapsed:false, deps:[], notes:'', critical:false
     });
     normalizeTask(tasks[tasks.findIndex(t => t.id === id)]);
     selectedId = id; save(); renderAll(); toast(sub ? '已添加子任务' : '已添加任务');
@@ -2956,6 +2970,7 @@
   const xmlEscape = value => String(value ?? '').replace(/[<>&'"]/g, character => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[character]));
   const csvEscape = value => `"${String(value ?? '').replace(/"/g,'""')}"`;
   const exportDateText = value => {
+    if (!value) return '';
     const format = $('exportDateFormat')?.value || 'YYYY-MM-DD';
     if (format === 'YYYY/MM/DD') return String(value).replace(/-/g,'/');
     if (format === 'MM/DD') return shortDate(value);
@@ -3132,7 +3147,7 @@ ${body}
 
   function preparePdfCombined() {
     const list = exportTasks();
-    const dates = list.flatMap(task => [parseDate(task.start), parseDate(task.end)]);
+    const dates = list.flatMap(task => [task.start, task.end]).filter(isValidDateValue).map(parseDate);
     const start = dates.length ? new Date(Math.min(...dates)) : new Date(today);
     const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 30);
     const totalDays = Math.max(1, diffDays(fmtDate(end), fmtDate(start)) + 1);
@@ -3178,7 +3193,7 @@ ${body}
 
   function preparePdfTaskList() {
     const list = exportTasks();
-    const dates = list.flatMap(task => [parseDate(task.start), parseDate(task.end)]);
+    const dates = list.flatMap(task => [task.start, task.end]).filter(isValidDateValue).map(parseDate);
     const start = dates.length ? new Date(Math.min(...dates)) : new Date(today);
     const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 30);
     const rowHeight = Math.max(3, Math.min(34, Math.floor(780 / Math.max(1, list.length))));
@@ -3208,7 +3223,7 @@ ${body}
 
   function preparePdfGantt() {
     const list = exportTasks();
-    const dates = list.flatMap(task => [parseDate(task.start), parseDate(task.end)]);
+    const dates = list.flatMap(task => [task.start, task.end]).filter(isValidDateValue).map(parseDate);
     const start = dates.length ? new Date(Math.min(...dates)) : new Date(today);
     const end = dates.length ? new Date(Math.max(...dates)) : addDays(today, 30);
     const totalDays = Math.max(1, diffDays(fmtDate(end), fmtDate(start)) + 1);
@@ -3244,7 +3259,7 @@ ${body}
   }
   function exportGanttSvg() {
     const list = exportTasks();
-    const dates = list.flatMap(task => [parseDate(task.start),parseDate(task.end)]);
+    const dates = list.flatMap(task => [task.start,task.end]).filter(isValidDateValue).map(parseDate);
     const start = dates.length ? new Date(Math.min(...dates)) : new Date(chartStart);
     const end = dates.length ? addDays(new Date(Math.max(...dates)),3) : addDays(chartStart,30);
     const totalDays = Math.max(1,diffDays(fmtDate(end),fmtDate(start)));
@@ -4077,7 +4092,7 @@ ${body}
       id, name, type:$('newProjectType').value, portfolio, owner,
       status:'规划中', visibility:$('newProjectVisibility').value || 'private', budget:Number($('newProjectBudget').value.replace(/[^\d]/g,'')) || 0,
       start, end:fmtDate(addDays(start, 89)), tasks:[{
-        id:'NEW1', name, level:0, type:'summary', start, end:fmtDate(addDays(start, 89)),
+        id:'NEW1', name, level:0, type:'summary', start:'', end:'',
         progress:0, owner:'', collapsed:false, deps:[], notes:'新建项目主任务',
         scheduleMode:'自动计划', durationType:'固定工期', priority:50
       }]
@@ -4660,7 +4675,7 @@ ${body}
     else if (task.status==='未开始') task.progress=0;
     else if (task.status==='进行中' && (task.progress===0 || task.progress>=100)) task.progress=50;
     task.inactive=$('detailInactive').checked; task.notes=$('detailNotes').value;
-    if (parseDate(task.end)<parseDate(task.start)) task.end=task.start;
+    if (isScheduledTask(task) && parseDate(task.end)<parseDate(task.start)) task.end=task.start;
     save(); renderAll();
   }));
   $('detailProgress').addEventListener('input', e => $('detailProgressValue').textContent = e.target.value+'%');
