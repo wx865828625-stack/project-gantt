@@ -175,6 +175,15 @@
       background: #fff; font-size: 10px;
     }
     .toolbar .right { display: flex; align-items: center; gap: 6px; min-width: max-content; }
+    .task-depth-control {
+      height: 32px; display: inline-flex; align-items: center; gap: 7px; flex: none;
+      padding: 0 8px; border: 1px solid var(--line); border-radius: 7px;
+      background: var(--soft); color: #42536a; white-space: nowrap;
+    }
+    .task-depth-control select {
+      min-width: 82px; border: 0; background: transparent; color: inherit; cursor: pointer;
+    }
+    .task-depth-control select:focus-visible { outline: 2px solid #9dc0ff; border-radius: 3px; }
 
     .workspace { min-height: 0; display: flex; position: relative; }
     .workspace-nav {
@@ -325,7 +334,7 @@
       padding-right: 3px;
     }
     .table-column-head, .task-row {
-      grid-template-columns: var(--task-grid-columns, 32px var(--col-name, 210px) var(--col-start, 88px) var(--col-end, 88px) var(--col-progress, 76px) var(--col-status, 92px) var(--col-workload, 82px) var(--col-owner, 88px) var(--col-deps, 120px));
+      grid-template-columns: var(--task-grid-columns, 32px var(--col-name, 210px) var(--col-deliverable, 180px) var(--col-start, 88px) var(--col-end, 88px) var(--col-progress, 76px) var(--col-status, 92px) var(--col-workload, 82px) var(--col-owner, 88px) var(--col-deps, 120px));
       width: max-content; min-width: 100%;
     }
     .table-head .head-label { width: 100%; min-width: 0; }
@@ -546,7 +555,7 @@
       #printExportSheet .print-bar.progress { background: #18a67a; opacity: .72; }
       #printExportSheet .print-bar.milestone { width: 8px !important; transform: rotate(45deg); background: #f59f45; }
       #printExportSheet .print-combined {
-        flex: 1; min-height: 0; display: grid; grid-template-columns: 48% 52%;
+        flex: 1; min-height: 0; display: grid; grid-template-columns: 54% 46%;
         border: 1px solid #bfcbd6; overflow: hidden;
       }
       #printExportSheet .print-combined-task, #printExportSheet .print-combined-chart {
@@ -554,7 +563,7 @@
       }
       #printExportSheet .print-combined-task { border-right: 1px solid #bfcbd6; }
       #printExportSheet .print-combined-head {
-        display: grid; grid-template-columns: 7% 24% 12% 12% 11% 8% 9% 17%;
+        display: grid; grid-template-columns: 5% 20% 18% 11% 11% 9% 7% 8% 11%;
         align-items: center; background: #eef3f7; border-bottom: 1px solid #bfcbd6;
         font-size: 7px; font-weight: 700; color: #3d5166;
       }
@@ -575,7 +584,7 @@
         font-size: var(--print-font-size, 7px);
       }
       #printExportSheet .print-combined-task-row {
-        display: grid; grid-template-columns: 7% 24% 12% 12% 11% 8% 9% 17%;
+        display: grid; grid-template-columns: 5% 20% 18% 11% 11% 9% 7% 8% 11%;
       }
       #printExportSheet .print-combined-chart-row {
         position: relative; overflow: hidden;
@@ -597,12 +606,14 @@
         height: 28px; background: #eef3f7; border-bottom-color: #bfcbd6; color: #3d5166; font-weight: 700;
       }
       #printExportSheet .print-task-list td:first-child, #printExportSheet .print-task-list th:first-child { width: 44px; }
-      #printExportSheet .print-task-list td:nth-child(2), #printExportSheet .print-task-list th:nth-child(2) { width: 25%; }
-      #printExportSheet .print-task-list td:nth-child(3), #printExportSheet .print-task-list th:nth-child(3),
-      #printExportSheet .print-task-list td:nth-child(4), #printExportSheet .print-task-list th:nth-child(4) { width: 74px; }
-      #printExportSheet .print-task-list td:nth-child(5), #printExportSheet .print-task-list th:nth-child(5) { width: 62px; }
-      #printExportSheet .print-task-list td:nth-child(6), #printExportSheet .print-task-list th:nth-child(6) { width: 56px; }
-      #printExportSheet .print-task-list td:nth-child(7), #printExportSheet .print-task-list th:nth-child(7) { width: 56px; }
+      #printExportSheet .print-task-list td:nth-child(2), #printExportSheet .print-task-list th:nth-child(2) { width: 22%; }
+      #printExportSheet .print-task-list td:nth-child(3), #printExportSheet .print-task-list th:nth-child(3) { width: 20%; }
+      #printExportSheet .print-task-list td:nth-child(4), #printExportSheet .print-task-list th:nth-child(4),
+      #printExportSheet .print-task-list td:nth-child(5), #printExportSheet .print-task-list th:nth-child(5) { width: 74px; }
+      #printExportSheet .print-task-list td:nth-child(6), #printExportSheet .print-task-list th:nth-child(6) { width: 62px; }
+      #printExportSheet .print-task-list td:nth-child(7), #printExportSheet .print-task-list th:nth-child(7),
+      #printExportSheet .print-task-list td:nth-child(8), #printExportSheet .print-task-list th:nth-child(8) { width: 56px; }
+      #printExportSheet .print-combined-task-row > .print-key-deliverable { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.25; }
     }
 
     .gantt-pane { min-width: 0; display: grid; grid-template-rows: var(--planner-header-height, 140px) 1fr; }
@@ -678,7 +689,7 @@
     .table-scroll::-webkit-scrollbar-track, .gantt-scroll::-webkit-scrollbar-track { background: #f2f5f8; }
     .task-row {
       height: var(--row-h); display: grid;
-      grid-template-columns: var(--task-grid-columns, 32px var(--col-name, 210px) var(--col-start, 88px) var(--col-end, 88px) var(--col-progress, 76px) var(--col-status, 92px) var(--col-workload, 82px) var(--col-owner, 88px) var(--col-deps, 120px));
+      grid-template-columns: var(--task-grid-columns, 32px var(--col-name, 210px) var(--col-deliverable, 180px) var(--col-start, 88px) var(--col-end, 88px) var(--col-progress, 76px) var(--col-status, 92px) var(--col-workload, 82px) var(--col-owner, 88px) var(--col-deps, 120px));
       align-items: stretch; border-bottom: 1px solid #e9eef3; position: relative;
     }
     .task-row:hover, .task-row:hover ~ .chart-row .line-cell { background: #f8fbff; }
@@ -710,13 +721,14 @@
       width: 100%; text-overflow: ellipsis; font-weight: 560; color: #2b3b50; border-radius: 4px;
     }
     .task-name:focus { background: #fff; box-shadow: 0 0 0 2px #9dc0ff; }
-    .compact-cell input, .compact-cell select {
+    .compact-cell input, .compact-cell select, .compact-cell textarea {
       width: 100%; border: 1px solid transparent; background: transparent; outline: 0;
       color: #4c6076; padding: 5px 3px; border-radius: 4px;
     }
-    .compact-cell input:focus, .compact-cell select:focus {
+    .compact-cell input:focus, .compact-cell select:focus, .compact-cell textarea:focus {
       border-color: #9dc0ff; background: #fff;
     }
+    .compact-cell textarea { height: 30px; min-width: 0; resize: none; white-space: pre; }
     .compact-cell input[data-date-input] {
       width: 100%; min-width: 0; max-width: 100%; padding: 5px 2px;
       font-size: 11px; text-align: center; letter-spacing: .2px;
@@ -1221,6 +1233,7 @@
     <div class="separator"></div>
     <button class="tool-btn" id="indentTask"><span class="icon">→</span><span class="text">降级</span></button>
     <button class="tool-btn" id="outdentTask"><span class="icon">←</span><span class="text">升级</span></button>
+    <label class="task-depth-control" for="taskDepthSelect"><span>展开几级任务</span><select id="taskDepthSelect" aria-label="展开几级任务" title="按层级批量展开任务，1级只显示顶层任务"><option value="all">全部展开</option></select></label>
     <div class="separator"></div>
     <button class="tool-btn" id="undoBtn"><span class="icon">↶</span></button>
     <button class="tool-btn" id="redoBtn"><span class="icon">↷</span></button>
@@ -1285,6 +1298,7 @@
             <div class="table-column-head" id="tableColumnHead">
       <div class="head-cell" data-column-key="index" draggable="true" title="任务序号；依赖列使用相同序号">序号</div>
               <div class="head-cell" data-column-key="name" draggable="true" title="拖动调整列顺序">任务名称<i class="column-resizer" data-column="name"></i></div>
+              <div class="head-cell" data-column-key="deliverable" draggable="true" title="拖动调整列顺序">关键交付物<i class="column-resizer" data-column="deliverable"></i></div>
               <div class="head-cell" data-column-key="start" draggable="true" title="拖动调整列顺序">开始<i class="column-resizer" data-column="start"></i></div>
               <div class="head-cell" data-column-key="end" draggable="true" title="拖动调整列顺序">完成<i class="column-resizer" data-column="end"></i></div>
               <div class="head-cell" data-column-key="progress" draggable="true" title="拖动调整列顺序">进度<i class="column-resizer" data-column="progress"></i></div>
@@ -1356,9 +1370,13 @@
         </div>
         <div class="form-group"><label>前置任务序号</label><input class="form-control" id="detailDep" placeholder="例如：2, 4"></div>
         <label class="form-check" style="margin:4px 0 12px"><input class="form-check-input" type="checkbox" id="detailInactive"><span class="form-check-label">非活动任务（不参与排程与成本）</span></label>
+        <div class="form-group">
+          <label for="detailKeyDeliverable">关键交付物</label>
+          <textarea class="form-control note" id="detailKeyDeliverable" placeholder="例如：架构规格书、RTL冻结版本、流片签核报告…"></textarea>
+        </div>
         <div class="inspector-section">
           <h4>执行说明</h4>
-          <textarea class="form-control note" id="detailNotes" placeholder="补充交付物、验收标准或沟通说明…"></textarea>
+          <textarea class="form-control note" id="detailNotes" placeholder="补充验收标准或沟通说明…"></textarea>
         </div>
         <div class="inspector-section">
           <h4>计划摘要</h4>
@@ -1571,7 +1589,7 @@
     <div class="modal-body">
       <div class="workflow-summary"><b>PDF 是默认导出格式</b>推荐选择“任务 + 甘特图全览”，任务明细与甘特图会左右对应并完整压缩到一页 A3 横向纸张。日期轴只绘制任务实际开始到结束的范围。MPP 与 PPTX 原生文件暂不支持直接写入。</div>
       <div class="format-grid">
-        <label class="format-card"><input type="radio" name="exportFormat" value="csv"><b>CSV / Excel 兼容</b><p>完整任务、日期、进度、负责人、依赖和成本字段，可直接用 Excel 打开。</p></label>
+        <label class="format-card"><input type="radio" name="exportFormat" value="csv"><b>CSV / Excel 兼容</b><p>完整任务、关键交付物、日期、进度、负责人、依赖和成本字段，可直接用 Excel 打开。</p></label>
         <label class="format-card selected"><input type="radio" name="exportFormat" value="pdf" checked><b>PDF 一页全览</b><p>默认将任务明细与甘特图左右对应，在一页横向 A3 中完整展示全部任务。</p></label>
         <label class="format-card"><input type="radio" name="exportFormat" value="xml"><b>Project XML</b><p>导出项目、WBS、任务、日期和依赖的 XML 数据交换文件。</p></label>
         <label class="format-card"><input type="radio" name="exportFormat" value="json"><b>JSON 完整备份</b><p>保存项目、任务、资源、基线和配置，适合备份或再次导入。</p></label>
@@ -1583,7 +1601,7 @@
         <b>PDF 导出内容</b>
         <div class="content-choice-grid">
           <label class="content-choice selected"><input type="radio" name="exportPdfContent" value="combined" checked><b>任务 + 甘特图全览（推荐）</b><p>任务明细与甘特图左右对应，在一页 A3 横向中完整展示全部任务和实际日期范围。</p></label>
-          <label class="content-choice"><input type="radio" name="exportPdfContent" value="tasks"><b>仅任务清单</b><p>导出 WBS、任务名称、开始/完成日期、状态、进度、工作量、负责人和前置任务序号。</p></label>
+          <label class="content-choice"><input type="radio" name="exportPdfContent" value="tasks"><b>仅任务清单</b><p>导出 WBS、任务名称、关键交付物、开始/完成日期、状态、进度、工作量、负责人和前置任务序号。</p></label>
           <label class="content-choice"><input type="radio" name="exportPdfContent" value="gantt"><b>仅甘特图</b><p>导出任务时间条、完成进度、里程碑和项目日期范围，适合汇报和打印。</p></label>
         </div>
         <p class="content-choice-note">提示：两种 PDF 内容都会自动压缩到一页；导出前可再调整“导出范围”。</p>
@@ -1848,15 +1866,22 @@
     {id:'R7',name:'第三方安全测试',type:'成本资源',role:'外部服务',standardRate:0,overtimeRate:0,availability:100,calendar:'按需',costPerUse:32000,skills:'安全测试、渗透测试',notes:'一次性费用'}
   ];
   let resourceProfiles = JSON.parse(localStorage.getItem('flowplan_resource_profiles_v1') || 'null') || defaultResourceProfiles;
-  let columnWidths = JSON.parse(localStorage.getItem('flowplan_columns_v1') || 'null') || {name:210,start:88,end:88,progress:76,status:92,workload:82,owner:88,deps:120};
-  ['name','start','end','progress','status','workload','owner','deps'].forEach(key => {
-    if (!Number.isFinite(Number(columnWidths[key]))) columnWidths[key] = {name:210,start:88,end:88,progress:76,status:92,workload:82,owner:88,deps:120}[key];
+  const defaultColumnWidths = {name:210,deliverable:180,start:88,end:88,progress:76,status:92,workload:82,owner:88,deps:120};
+  let columnWidths = JSON.parse(localStorage.getItem('flowplan_columns_v1') || 'null') || {...defaultColumnWidths};
+  Object.entries(defaultColumnWidths).forEach(([key,width]) => {
+    if (!Number.isFinite(Number(columnWidths[key])) || Number(columnWidths[key]) <= 0) columnWidths[key] = width;
   });
-  const defaultColumnOrder = ['index','name','start','end','progress','status','workload','owner','deps'];
-  const columnLabels = {index:'序号',name:'任务名称',start:'开始',end:'完成',progress:'进度',status:'完成状态',workload:'工作量(天)',owner:'负责人',deps:'依赖任务序号'};
+  const defaultColumnOrder = ['index','name','deliverable','start','end','progress','status','workload','owner','deps'];
+  const columnLabels = {index:'序号',name:'任务名称',deliverable:'关键交付物',start:'开始',end:'完成',progress:'进度',status:'完成状态',workload:'工作量(天)',owner:'负责人',deps:'依赖任务序号'};
+  const completeColumnOrder = order => {
+    const result = Array.isArray(order) ? [...new Set(order.filter(key => defaultColumnOrder.includes(key)))] : [];
+    defaultColumnOrder.forEach((key,index) => {
+      if (!result.includes(key)) result.splice(result.indexOf(defaultColumnOrder[index - 1]) + 1, 0, key);
+    });
+    return result;
+  };
   const savedColumns = JSON.parse(localStorage.getItem('flowplan_task_columns_v1') || 'null') || {};
-  let columnOrder = Array.isArray(savedColumns.order) ? savedColumns.order.filter(key => defaultColumnOrder.includes(key)) : [...defaultColumnOrder];
-  defaultColumnOrder.forEach(key => { if (!columnOrder.includes(key)) columnOrder.push(key); });
+  let columnOrder = completeColumnOrder(savedColumns.order);
   let hiddenColumns = new Set(Array.isArray(savedColumns.hidden) ? savedColumns.hidden.filter(key => defaultColumnOrder.includes(key) && key !== 'name') : []);
   let mainPage = 'plan';
   let quickView = 'gantt';
@@ -2065,6 +2090,7 @@
   const statusFromProgress = progress => Number(progress) >= 100 ? '已完成' : Number(progress) <= 0 ? '未开始' : '进行中';
   const normalizeTask = task => {
     task.status ||= statusFromProgress(task.progress);
+    task.keyDeliverable = String(task.keyDeliverable ?? '');
     if (!Number.isFinite(Number(task.estimatedWorkloadDays))) {
       task.estimatedWorkloadDays = task.type === 'milestone' ? 0 : Math.max(.5, Math.round(duration(task) * .8 * 2) / 2);
     }
@@ -2223,17 +2249,40 @@
   }
 
   function getVisibleTasks() {
-    return tasks.filter((task, index) => {
-      if (task.level === 0) return true;
-      const ancestors = [];
-      for (let cursor = index - 1; cursor >= 0; cursor--) {
-        if (tasks[cursor].level < task.level) {
-          ancestors.push(tasks[cursor]);
-          if (tasks[cursor].level === 0) break;
-        }
-      }
-      return !ancestors.some(parent => parent.collapsed);
+    const ancestors = [];
+    return tasks.filter(task => {
+      while (ancestors.length && ancestors[ancestors.length - 1].level >= task.level) ancestors.pop();
+      const visible = !ancestors.some(parent => parent.collapsed);
+      ancestors.push(task);
+      return visible;
     });
+  }
+
+  function syncTaskDepthControl() {
+    const select = $('taskDepthSelect');
+    const maxDepth = tasks.reduce((depth,task) => Math.max(depth, task.level + 1), 1);
+    const parents = tasks.filter(hasChildTasks);
+    const matchesDepth = value => parents.every(task => !!task.collapsed === (value !== 'all' && task.level >= Number(value) - 1));
+    const previous = select.value;
+    let value = previous === 'all' || (Number(previous) >= 1 && Number(previous) <= maxDepth) ? previous : 'all';
+    if (!matchesDepth(value)) {
+      value = matchesDepth('all') ? 'all' : Array.from({length:maxDepth}, (_,index) => String(index + 1)).find(matchesDepth) || 'custom';
+    }
+    select.innerHTML = `<option value="all">全部展开</option>${Array.from({length:maxDepth}, (_,index) => `<option value="${index + 1}">${index + 1} 级</option>`).join('')}${value === 'custom' ? '<option value="custom" disabled>自定义展开</option>' : ''}`;
+    select.value = value;
+  }
+
+  function setTaskExpansionDepth(value) {
+    if (value !== 'all' && (!Number.isInteger(Number(value)) || Number(value) < 1)) return;
+    tasks.forEach(task => { task.collapsed = hasChildTasks(task) && value !== 'all' && task.level >= Number(value) - 1; });
+    const visible = getVisibleTasks();
+    const selected = taskById(selectedId);
+    if (!visible.includes(selected)) {
+      const ancestor = selected && tasks.slice(0, tasks.indexOf(selected)).reverse().find(task => task.level < selected.level && visible.includes(task));
+      selectedId = (ancestor || visible[0])?.id || selectedId;
+    }
+    save(); renderAll();
+    toast(value === 'all' ? '已展开全部任务' : `已展开到第 ${value} 级任务`);
   }
 
   function collapsedMilestonesFor(task) {
@@ -2567,7 +2616,7 @@
     const visible = getVisibleTasks();
     $('tableBody').innerHTML = visible.map((task, index) => {
       const filtered = !matchesFilters(task);
-      const children = tasks.some(t => tasks.indexOf(t) > tasks.indexOf(task) && t.level > task.level);
+      const children = hasChildTasks(task);
       const owner = ownerFor(task.owner);
       const cellFor = key => {
         const hidden = hiddenColumns.has(key) ? ' column-hidden' : '';
@@ -2579,6 +2628,7 @@
           <i class="type-mark"></i>
           <input class="task-name" data-field="name" value="${escapeHtml(task.name)}" title="${escapeHtml(task.name)}">
         </div>`;
+        if (key === 'deliverable') return `<div class="cell compact-cell${hidden}" data-column-key="deliverable"><textarea data-field="keyDeliverable" rows="1" title="${escapeHtml(task.keyDeliverable || '填写任务的关键交付物')}" placeholder="填写关键交付物" aria-label="关键交付物">${escapeHtml(task.keyDeliverable || '')}</textarea></div>`;
         if (key === 'start') return `<div class="cell compact-cell${hidden}" data-column-key="start"><input type="date" data-date-input data-field="start" value="${task.start}"${parentDateAttrs} aria-label="开始日期"></div>`;
         if (key === 'end') return `<div class="cell compact-cell${hidden}" data-column-key="end"><input type="date" data-date-input data-field="end" value="${task.end}"${parentDateAttrs} aria-label="完成日期"></div>`;
         if (key === 'progress') return `<div class="cell progress-cell${hidden}" data-column-key="progress"><input data-field="progress" value="${task.progress}" type="number" min="0" max="100"><div class="progress-track"><i style="width:${task.progress}%"></i></div></div>`;
@@ -2701,7 +2751,7 @@
   function wireTableEvents() {
     document.querySelectorAll('.task-row').forEach(row => {
       row.addEventListener('click', e => {
-        if (e.target.matches('button,input,select')) return;
+        if (e.target.matches('button,input,select,textarea')) return;
         selectTask(row.dataset.id);
       });
       row.addEventListener('dragstart', e => {
@@ -2895,6 +2945,7 @@
     $('detailProgress').value = task.progress;
     $('detailProgressValue').textContent = `${task.progress}%`;
     $('detailDep').value = dependencyDisplayValue(task);
+    $('detailKeyDeliverable').value = task.keyDeliverable || '';
     $('detailNotes').value = task.notes || '';
     const delay = task.baselineStart ? diffDays(task.start, task.baselineStart) : 0;
     $('detailSummary').innerHTML = `<b>${duration(task)} 天</b> · ${task.status || statusFromProgress(task.progress)} · 预计工作量 ${Number(task.estimatedWorkloadDays)||0} 天<br>基线${delay===0?'一致':`偏差 ${delay>0?'+':''}${delay} 天`} · ${task.deps.length} 个前置`;
@@ -2912,6 +2963,7 @@
 
   function renderAll(refreshInspector = true) {
     recomputeSummaryDates();
+    syncTaskDepthControl();
     const currentProject = projects.find(project => project.id === currentProjectId);
     if (currentProject && document.activeElement !== $('projectTitleInput')) $('projectTitleInput').value = currentProject.name;
     updateProjectVisibilityIndicator();
@@ -2985,8 +3037,8 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   function exportCsv() {
-    const header = ['任务编号','WBS','任务名称','层级','类型','开始日期','完成日期','工期','完成状态','预计工作量(天)','进度','负责人','前置任务序号','成本','备注'];
-    const rows = exportTasks().map(task => [task.id,wbsCode(task),task.name,task.level+1,task.type,exportDateText(task.start),exportDateText(task.end),duration(task),task.status || statusFromProgress(task.progress),task.estimatedWorkloadDays || 0,task.progress+'%',task.owner,dependencyDisplayValue(task),task.cost || 0,task.notes||'']);
+    const header = ['任务编号','WBS','任务名称','关键交付物','层级','类型','开始日期','完成日期','工期','完成状态','预计工作量(天)','进度','负责人','前置任务序号','成本','备注'];
+    const rows = exportTasks().map(task => [task.id,wbsCode(task),task.name,task.keyDeliverable||'',task.level+1,task.type,exportDateText(task.start),exportDateText(task.end),duration(task),task.status || statusFromProgress(task.progress),task.estimatedWorkloadDays || 0,task.progress+'%',task.owner,dependencyDisplayValue(task),task.cost || 0,task.notes||'']);
     const csv = '\uFEFF' + [header,...rows].map(row => row.map(csvEscape).join(',')).join('\n');
     downloadBlob(csv, 'text/csv;charset=utf-8', 'csv');
     toast(`CSV / Excel 兼容文件已导出（${rows.length} 个任务）`);
@@ -3000,10 +3052,12 @@
       <PercentComplete>${Number(task.progress)||0}</PercentComplete><Status>${xmlEscape(task.status || statusFromProgress(task.progress))}</Status>
       <EstimatedWork>${Number(task.estimatedWorkloadDays)||0}</EstimatedWork><ResourceName>${xmlEscape(task.owner)}</ResourceName>
       <Predecessors>${xmlEscape(task.deps.join(','))}</Predecessors><Notes>${xmlEscape(task.notes||'')}</Notes>
+      <ExtendedAttributes><ExtendedAttribute><FieldID>188743731</FieldID><Value>${xmlEscape(task.keyDeliverable || '')}</Value></ExtendedAttribute></ExtendedAttributes>
     </Task>`).join('\n');
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Project xmlns="http://schemas.microsoft.com/project">
   <Name>${xmlEscape(project?.name)}</Name><CurrentDate>${fmtDate(today)}</CurrentDate>
+  <ExtendedAttributes><ExtendedAttribute><FieldID>188743731</FieldID><FieldName>Text1</FieldName><Alias>关键交付物</Alias></ExtendedAttribute></ExtendedAttributes>
   <Tasks>
 ${body}
   </Tasks>
@@ -3039,7 +3093,7 @@ ${body}
         owner:String(importedProject.owner || '待分配'),
         status:String(importedProject.status || '规划中'),
         visibility:importedProject.visibility || 'team',
-        tasks:importedProject.tasks.map((task,index) => ({
+        tasks:importedProject.tasks.map((task,index) => normalizeTask({
           ...task,
           id:String(task.id || `T${index + 1}`),
           name:String(task.name || `任务 ${index + 1}`),
@@ -3069,8 +3123,7 @@ ${body}
       if (Number(settings.windowScale) > 0) windowScale = Number(settings.windowScale);
       if (settings.columnWidths && typeof settings.columnWidths === 'object') columnWidths = {...columnWidths, ...settings.columnWidths};
       if (Array.isArray(settings.columnOrder)) {
-        const validOrder = settings.columnOrder.filter(key => defaultColumnOrder.includes(key));
-        columnOrder = [...new Set([...validOrder, ...defaultColumnOrder])];
+        columnOrder = completeColumnOrder(settings.columnOrder);
       }
       if (Array.isArray(settings.hiddenColumns)) {
         hiddenColumns = new Set(settings.hiddenColumns.filter(key => defaultColumnOrder.includes(key) && key !== 'name'));
@@ -3155,6 +3208,7 @@ ${body}
     const taskRows = list.map(task => `<div class="print-combined-task-row">
       <span>${xmlEscape(wbsCode(task))}</span>
       <span><b>${xmlEscape(task.name)}</b></span>
+      <span class="print-key-deliverable">${xmlEscape(task.keyDeliverable || '')}</span>
       <span>${xmlEscape(exportDateText(task.start))}</span>
       <span>${xmlEscape(exportDateText(task.end))}</span>
       <span>${xmlEscape(task.status || statusFromProgress(task.progress))}</span>
@@ -3180,7 +3234,7 @@ ${body}
       dayWidth: 100 / totalDays,
       content: `<div class="print-combined">
         <div class="print-combined-task">
-          <div class="print-combined-head"><span>WBS</span><span>任务名称</span><span>开始</span><span>完成</span><span>状态</span><span>进度</span><span>工作量</span><span>负责人</span></div>
+          <div class="print-combined-head"><span>WBS</span><span>任务名称</span><span>关键交付物</span><span>开始</span><span>完成</span><span>状态</span><span>进度</span><span>工作量</span><span>负责人</span></div>
           <div class="print-combined-task-rows">${taskRows}</div>
         </div>
         <div class="print-combined-chart">
@@ -3201,6 +3255,7 @@ ${body}
     const rows = list.map(task => `<tr>
       <td>${xmlEscape(wbsCode(task))}</td>
       <td>${xmlEscape(task.name)}</td>
+      <td class="print-key-deliverable">${xmlEscape(task.keyDeliverable || '')}</td>
       <td>${xmlEscape(exportDateText(task.start))}</td>
       <td>${xmlEscape(exportDateText(task.end))}</td>
       <td>${xmlEscape(task.status || statusFromProgress(task.progress))}</td>
@@ -3215,7 +3270,7 @@ ${body}
       rowHeight,
       printScale,
       content: `<div class="print-task-list"><table>
-        <thead><tr><th>WBS</th><th>任务名称</th><th>开始</th><th>完成</th><th>状态</th><th>进度</th><th>工作量</th><th>负责人</th><th>前置任务序号</th></tr></thead>
+        <thead><tr><th>WBS</th><th>任务名称</th><th>关键交付物</th><th>开始</th><th>完成</th><th>状态</th><th>进度</th><th>工作量</th><th>负责人</th><th>前置任务序号</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>`
     });
@@ -3664,7 +3719,7 @@ ${body}
         const startWidth = columnWidths[key];
         handle.classList.add('active');
         const move = moveEvent => {
-          const min = key === 'name' ? 160 : key === 'status' ? 76 : key === 'workload' ? 66 : key === 'deps' ? 100 : 70;
+          const min = key === 'name' ? 160 : key === 'deliverable' ? 120 : key === 'status' ? 76 : key === 'workload' ? 66 : key === 'deps' ? 100 : 70;
           columnWidths[key] = Math.max(min, Math.round(startWidth + moveEvent.clientX - startX));
           applyColumnWidths();
         };
@@ -4160,6 +4215,7 @@ ${body}
   $('deleteTask').addEventListener('click', deleteSelected);
   $('indentTask').addEventListener('click', () => changeLevel(1));
   $('outdentTask').addEventListener('click', () => changeLevel(-1));
+  $('taskDepthSelect').addEventListener('change', event => setTaskExpansionDepth(event.target.value));
   $('undoBtn').addEventListener('click', () => restore(undoStack, redoStack));
   $('redoBtn').addEventListener('click', () => restore(redoStack, undoStack));
   $('importBackupBtn').addEventListener('click', () => $('importJsonInput').click());
@@ -4659,7 +4715,7 @@ ${body}
   $('searchInput').addEventListener('input', e => { filters.query = e.target.value; renderAll(false); });
   $('ownerFilter').innerHTML = '<option value="all">全部成员</option>' + owners.map(o=>`<option>${o.name}</option>`).join('');
 
-  ['detailName','detailStart','detailEnd','detailType','detailOwner','detailScheduleMode','detailDurationType','detailConstraint','detailPriority','detailStatus','detailWorkload','detailInactive','detailNotes'].forEach(id => $(id).addEventListener('change', () => {
+  ['detailName','detailStart','detailEnd','detailType','detailOwner','detailScheduleMode','detailDurationType','detailConstraint','detailPriority','detailStatus','detailWorkload','detailInactive','detailKeyDeliverable','detailNotes'].forEach(id => $(id).addEventListener('change', () => {
     const task = taskById(selectedId); if (!task) return;
     snapshot();
     const previousStart = task.start;
@@ -4674,7 +4730,7 @@ ${body}
     if (task.status==='已完成') task.progress=100;
     else if (task.status==='未开始') task.progress=0;
     else if (task.status==='进行中' && (task.progress===0 || task.progress>=100)) task.progress=50;
-    task.inactive=$('detailInactive').checked; task.notes=$('detailNotes').value;
+    task.inactive=$('detailInactive').checked; task.keyDeliverable=$('detailKeyDeliverable').value; task.notes=$('detailNotes').value;
     if (isScheduledTask(task) && parseDate(task.end)<parseDate(task.start)) task.end=task.start;
     save(); renderAll();
   }));
